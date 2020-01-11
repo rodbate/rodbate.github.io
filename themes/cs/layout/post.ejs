@@ -1,0 +1,153 @@
+<% var pagination;
+  var usePath = false;
+  if (page.slug === undefined) {
+    page.path = page.path.replace('/index.html', '')
+    usePath = true
+  }
+  var pageToc = toc(page.content)
+%>
+<%
+  if (theme.post.random_pics !== false && theme.post.random_pics) {
+    var randomPic = Math.floor(Math.random() * theme.post.random_pics + 1);
+  }
+%>
+
+<% if (theme.post.prism.theme) { %>
+  <%- css('css/prism/' + theme.post.prism.theme + '.min') %>
+<% } %>
+<% if (theme.post.prism.line_number === true) { %>
+  <%- css('css/prism/line-number.min') %>
+<% } %>
+
+<div class="theme-post">
+  <div class="theme-post__background mdui-color-theme"></div>
+  <div class="theme-post__header mdui-color-theme">
+    <div class="theme-post__header__title mdui-text-truncate">
+      <%= page.title %>
+    </div>
+    <div class="theme-spacer"></div>
+    <div class="theme-post__header__actions mdui-valign">
+      <div>
+        <span><%= __('posts.posted') %></span>
+        <span style="float: right"><%= date(page.date, 'MMM DD, YYYY') %></span>
+        <%  var posted = date(page.date, 'MMM DD, YYYY')
+            var edited = date(page.updated, 'MMM DD, YYYY')
+            if (posted !== edited) { %>
+        <br>
+          <span><%= __('posts.edited') %></span>
+          <span><%= edited %></span>
+        <% } %>
+      </div>
+      <%- partial('_partials/menu/qrcode') %>
+      <%- partial('_partials/menu/share/post') %>
+    </div>
+  </div>
+  <div class="theme-post__warpper
+    <% if (pageToc.length === 0) { %>
+      theme-post__warpper--center
+    <% } %>
+  ">
+    <div class="theme-post__warpper__container">
+      <article class="mdui-card theme-post__card <% if (theme.style.hoverable === true) { %>mdui-hoverable<% } %>">
+        <section class="theme-post__card__warning">
+          <%= __('posts.modified.head') %>
+          <span id="content-warning"></span>
+          <%= __('posts.modified.foot') %>
+          <%= __('posts.modified.content') %>
+        </section>
+        <% if (theme.post.word_count === true || theme.post.read_time === true) { %>
+          <section class="theme-post__card__count">
+            <% if (theme.post.word_count === true) { %>
+              <span>
+                <%= __('posts.count.words.head') %><%= wordcount(page.content) %><%= __('posts.count.words.foot') %>
+              </span>
+            <% } %>
+            <% if (theme.post.read_time === true) { %>
+              <span>
+                <%= __('posts.count.time.head') %><%= min2read(page.content, {cn: 600, en: 160}) %><%= __('posts.count.time.foot') %>
+              </span>
+            <% } %>
+          </section>
+        <% } %>
+        <% if (theme.post.random_pics !== false && theme.post.random_pics) { %>
+          <section class="mdui-card-media">
+            <img src="<%= page.thumbnail || config.root + 'images/random/' + randomPic + '.png' %>"/>
+          </section>
+        <% } %>
+        <section class="mdui-typo theme-post__card__content">
+          <%-page.content%>
+        </section>
+
+
+        <% if ((page.categories && page.categories.length) || (page.tags && page.tags.length) || theme.post.donate !== null) { %>
+          <section class="mdui-card-actions theme-post__card__actions">
+            <div class="theme-spacer"></div>
+            <% if (page.categories && page.categories.length) { %>
+              <div class="mdui-chip theme-post__card__chip--bg theme-post__card__chip--margin">
+                <span class="mdui-chip-icon theme-post__card__chip--bg"><i class="mdui-icon mdui-text-color-black-icon material-icons">&#xe149;</i></span>
+              </div>
+              <div class="mdui-typo">
+                <% page.categories.map(function(category){  %>
+                  <a href="<%= url_for(category.path) %>">
+                    <span><%= category.name %></span>
+                  </a>
+                <% }) %>
+              </div>
+            <% } %>
+            <% if (page.tags && page.tags.length) { %>
+              <div class="mdui-chip theme-post__card__chip--bg theme-post__card__chip--margin">
+                <span class="mdui-chip-icon theme-post__card__chip--bg"><i class="mdui-icon mdui-text-color-black-icon fa fa-tags"></i></span>
+              </div>
+              <div class="mdui-typo">
+                <% page.tags.map(function(tag){  %>
+                  <a href="<%= url_for(tag.path) %>">
+                    <span><%= tag.name %></span>
+                  </a>
+                <% }) %>
+              </div>
+            <% } %>
+          </section>
+        <% } %>
+
+        <% if (page.comment !== false) { %>
+          <% if (theme.comment.use === 'disqus' || theme.comment.use === 'custom' || theme.comment.use === 'valine') { %>
+            <section>
+              <div class="mdui-divider"></div>
+            </section>
+            <section class="theme-post__card__comment">
+              <%- partial('_partials/comment') %>
+            </section>
+          <% } else { %>
+            <script type="text/javascript">
+              themeRuntime.commentRest.function = function (newIdentifier, newUrl, newTitle) {
+                return
+              }
+            </script>
+          <% } %>
+        <% } else { %>
+          <script type="text/javascript">
+            themeRuntime.commentRest.function = function (newIdentifier, newUrl, newTitle) {
+              return
+            }
+          </script>
+        <% } %>
+      </article>
+      <% if (pageToc.length > 0) { %>
+        <div class="mdui-color-theme theme-post__toc">
+          <%- tocContentHelper(pageToc) %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="theme-spacer"></div>
+
+  <% if (pageToc.length > 0) { %>
+    <%-partial('_partials/fab/post', {pageToc: pageToc})%>
+  <% } %>
+
+  <% if (pagination !== false) { %>
+    <%-partial('_partials/pagination/post')%>
+  <% } %>
+</div>
+<%-partial('_partials/js/post')%>
