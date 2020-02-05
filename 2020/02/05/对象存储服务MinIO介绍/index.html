@@ -1,0 +1,1016 @@
+
+<!DOCTYPE html>
+<html lang="zh">
+
+
+
+<head>
+  <script>
+    window.themeRuntime = {
+      root: "/blog/",
+      scriptsMap: {},
+      init: {
+        status: false
+      },
+      commentRest: {
+        status: false
+      },
+      versions: {
+        theme: "2.0.3",
+        mdui: "0.4.0",
+        fetch: "3.0.0",
+        es6promise: "4.2.5+7f2b526d",
+        lightgallery: "1.0.1",
+        smoothscroll: "15.2.0"
+      }
+      
+    };
+
+  </script>
+
+
+  <meta charset="UTF-8">
+  <title>对象存储服务MinIO介绍 - Rodbate Blog</title>
+
+  <!-- Favicons -->
+  <link rel="icon shortcut" type="image/ico" href="/blog/images/avatar.png">
+  <link rel="icon" sizes="192x192" href="/blog/images/avatar.png">
+  <link rel="apple-touch-icon" href="/blog/images/avatar.png">
+
+  <!-- Meta & Info -->
+  <meta http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  <meta name="theme-color" content="#fff">
+
+  <meta name="author" content="Rodbate">
+  
+  <meta name="keywords" content="rodbate, blog, java,OSS,MinIO">
+
+  <!--iOS -->
+  <meta name="apple-mobile-web-app-title" content="Rodbate Blog">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="480">
+
+  <!-- Add to homescreen for Chrome on Android -->
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- The Open Graph protocol -->
+  <meta property="og:url" content="https://rodbate.github.io/blog">
+  <meta property="og:type" content="blog">
+  <meta property="og:title" content="对象存储服务MinIO介绍 - Rodbate Blog | Rodbate Blog">
+  <meta property="og:image" content="/images/avatar.png" />
+  
+
+  
+    <meta property="og:article:tag" content="OSS">
+  
+    <meta property="og:article:tag" content="MinIO">
+  
+
+  
+
+  <!-- Import CSS -->
+  
+    
+<link rel="stylesheet" href="/blog/css/mdui.css">
+
+  
+
+  
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body class="mdui-drawer-body-left mdui-theme-primary-deep-purple mdui-theme-accent-red">
+
+  <style>
+    #spinner {
+      display: -webkit-box;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+      -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+          opacity: 1;
+      -webkit-transition: opacity 0.3s cubic-bezier(0, 0, 0.2, 1);
+          transition: opacity 0.3s cubic-bezier(0, 0, 0.2, 1);
+    }
+    main {
+      opacity: 0;
+      -webkit-transition: opacity 0.3s cubic-bezier(0, 0, 0.2, 1);
+      transition: opacity 0.3s cubic-bezier(0, 0, 0.2, 1);
+      display: none;
+    }
+  </style>
+  <div id="spinner">
+    <style>
+      .spinner {
+
+      -webkit-animation: rotator 1.4s linear infinite;
+              animation: rotator 1.4s linear infinite;
+      }
+
+      @-webkit-keyframes rotator {
+      0% {
+        -webkit-transform: rotate(0deg);
+                transform: rotate(0deg);
+      }
+      100% {
+        -webkit-transform: rotate(270deg);
+                transform: rotate(270deg);
+      }
+      }
+
+      @keyframes rotator {
+      0% {
+        -webkit-transform: rotate(0deg);
+                transform: rotate(0deg);
+      }
+      100% {
+        -webkit-transform: rotate(270deg);
+                transform: rotate(270deg);
+      }
+      }
+
+      .path {
+      stroke-dasharray: 187;
+      stroke-dashoffset: 0;
+      -webkit-transform-origin: center;
+              transform-origin: center;
+      -webkit-animation: dash 1.4s ease-in-out infinite, colors 5.6s ease-in-out infinite;
+              animation: dash 1.4s ease-in-out infinite, colors 5.6s ease-in-out infinite;
+      }
+
+      @-webkit-keyframes colors {
+      0% {
+        stroke: #4285F4;
+      }
+      25% {
+        stroke: #DE3E35;
+      }
+      50% {
+        stroke: #F7C223;
+      }
+      75% {
+        stroke: #1B9A59;
+      }
+      100% {
+        stroke: #4285F4;
+      }
+      }
+
+      @keyframes colors {
+      0% {
+        stroke: #4285F4;
+      }
+      25% {
+        stroke: #DE3E35;
+      }
+      50% {
+        stroke: #F7C223;
+      }
+      75% {
+        stroke: #1B9A59;
+      }
+      100% {
+        stroke: #4285F4;
+      }
+      }
+
+      @-webkit-keyframes dash {
+      0% {
+        stroke-dashoffset: 187;
+      }
+      50% {
+        stroke-dashoffset: 46.75;
+        -webkit-transform: rotate(135deg);
+                transform: rotate(135deg);
+      }
+      100% {
+        stroke-dashoffset: 187;
+        -webkit-transform: rotate(450deg);
+                transform: rotate(450deg);
+      }
+      }
+
+      @keyframes dash {
+      0% {
+        stroke-dashoffset: 187;
+      }
+      50% {
+        stroke-dashoffset: 46.75;
+        -webkit-transform: rotate(135deg);
+                transform: rotate(135deg);
+      }
+      100% {
+        stroke-dashoffset: 187;
+        -webkit-transform: rotate(450deg);
+                transform: rotate(450deg);
+      }
+      }
+    </style>
+    <svg class="spinner" width="65px" height="65px" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+      <circle class="path" fill="none" stroke-width="6" stroke-linecap="round" cx="33" cy="33" r="30"></circle>
+    </svg>
+  </div>
+
+  <main>
+    <div class="mdui-appbar mdui-appbar-fixed mdui-color-white mdui-shadow-0 theme-appbar">
+  <div class="mdui-toolbar theme-toolbar-top">
+    
+      <a href="/blog/" class="mdui-btn mdui-btn-icon mdui-ripple theme-appbar__burger theme-appbar__burger--arrow">
+        <i class="mdui-icon">
+          <span></span>
+        </i>
+      </a>
+    
+  </div>
+  <div class="mdui-toolbar theme-toolbar-bottom">
+    <span class="theme-toolbar-bottom__title">Rodbate Blog</span>
+    
+      <a href="/blog/search.html" class="mdui-textfield-icon mdui-btn mdui-btn-icon theme-toolbar-bottom__search">
+        <i class="mdui-icon material-icons">&#xe8b6;</i>
+      </a>
+    
+  </div>
+  <div class="mdui-progress theme-appbar__progress" id="progressBar">
+    <div class="mdui-progress-indeterminate"></div>
+  </div>
+</div>
+
+    <div class="mdui-drawer mdui-drawer-full-height theme-drawer" id="drawer">
+  <!-- header -->
+  <div class="theme-drawer__header">
+  <div class="theme-drawer__header__layer-1">
+    <div class="mdui-toolbar theme-toolbar-top">
+      
+        <a href="javascript:;" class="mdui-btn mdui-btn-icon mdui-ripple theme-appbar__burger theme-appbar__burger--drawer theme-appbar__burger--arrow" id="drawer-back">
+          <i class="mdui-icon">
+            <span></span>
+          </i>
+        </a>
+      
+    </div>
+    <div class="mdui-toolbar theme-toolbar-bottom">
+      <span class="theme-toolbar-bottom__title">Rodbate Blog</span>
+    </div>
+  </div>
+  <div class="theme-drawer__header__layer-2" style="background-image: url(/blog/images/bg.jpg)">
+    <img class="mdui-img-circle theme-drawer__header__layer-2__user__avatar" src="/blog/images/avatar.png"/>
+    <div class="theme-drawer__header__layer-2__user__info">
+      <div class="theme-drawer__header__layer-2__user__info__author mdui-text-color-white-text">
+        Rodbate
+      </div>
+      <div class="theme-drawer__header__layer-2__user__info__slogan mdui-text-color-white-secondary">
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  <div class="theme-drawer__warpper">
+    <!-- content -->
+    <div class="theme-drawer__warpper__content">
+  <ul class="mdui-list">
+    <a href="/blog/" class="mdui-list-item mdui-ripple mdui-ripple-white">
+      <i class="mdui-list-item-icon mdui-icon material-icons">&#xe88a;</i>
+      <div class="mdui-list-item-content">首页</div>
+    </a>
+    <a href="/blog/archives/" class="mdui-list-item mdui-ripple mdui-ripple-white">
+      <i class="mdui-list-item-icon mdui-icon material-icons">&#xe149;</i>
+      <div class="mdui-list-item-content">归档</div>
+    </a>
+    <ul class="mdui-list mdui-collapse" mdui-collapse="{accordion: true}" mdui-collapse>
+      
+      
+        <div class="mdui-collapse-item ">
+          <div class="mdui-collapse-item-header mdui-list-item mdui-ripple mdui-ripple-white">
+            <i class="mdui-list-item-icon mdui-icon fa fa-tags mdui-text-center"></i>
+            <div class="mdui-list-item-content">标签</div>
+            <i class="mdui-collapse-item-arrow mdui-icon material-icons">&#xe5c5;</i>
+          </div>
+          <div class="mdui-collapse-item-body mdui-list">
+            
+              <a href="/blog/tags/OSS/" class="mdui-list-item mdui-ripple mdui-ripple-white" style="display: flex">
+                OSS
+                <div style="flex-grow: 1;"></div>
+                <span class="theme-menu-badge new mdui-color-theme-accent" data-badge-caption="">1</span>
+              </a>
+            
+              <a href="/blog/tags/MinIO/" class="mdui-list-item mdui-ripple mdui-ripple-white" style="display: flex">
+                MinIO
+                <div style="flex-grow: 1;"></div>
+                <span class="theme-menu-badge new mdui-color-theme-accent" data-badge-caption="">1</span>
+              </a>
+            
+          </div>
+        </div>
+      
+      <div class="mdui-collapse-item ">
+        <div class="mdui-collapse-item-header mdui-list-item mdui-ripple mdui-ripple-white">
+          <i class="mdui-list-item-icon mdui-icon material-icons">&#xe916;</i>
+          <div class="mdui-list-item-content">年份</div>
+          <i class="mdui-collapse-item-arrow mdui-icon material-icons">&#xe5c5;</i>
+        </div>
+        <div class="mdui-collapse-item-body mdui-list">
+          
+          
+            <a href="/blog/archives/2020/" class="mdui-list-item mdui-ripple">
+              2020
+            </a>
+          
+        </div>
+      </div>
+    </ul>
+  </ul>
+  
+    <div class="mdui-divider"></div>
+    <ul class="mdui-list" mdui-collapse="{accordion: true}" mdui-collapse>
+      
+        
+          
+            <a href="https://github.com/rodbate" target="_self" class="mdui-list-item mdui-ripple mdui-ripple-white">
+          
+              
+              
+                <i class="mdui-list-item-icon mdui-icon material-icons">&#xe0ba;</i>
+              
+              
+              <div class="mdui-list-item-content">Github</div>
+            </a>
+        
+      
+    </ul>
+  
+</div>
+
+    <div class="theme-spacer"></div>
+    <!-- footer -->
+    <div class="theme-drawer__warpper__footer">
+  <div class="mdui-typo mdui-typo-caption-opacity">
+    <span>
+      Copyright ©
+      <span year></span>
+      Rodbate
+    </span>
+    
+    
+      <br />
+      <span>
+        最后更新于: 2月 05, 2020
+      </span>
+    
+    
+  </div>
+</div>
+<script type="text/javascript">
+  var copyrightNow = new Date().getFullYear();
+  var textContent = document.querySelector('span[year]')
+  
+    textContent.textContent = copyrightNow
+  
+</script>
+
+  </div>
+</div>
+
+    <div id="top"></div>
+
+    
+<script src="/blog/js/lightgallery.min.js"></script>
+
+
+    <div id="barba-wrapper">
+      <div class="barba-container"  data-namespace="post">
+        
+
+
+
+  
+<link rel="stylesheet" href="/blog/css/prism/xonokai.min.css">
+
+
+
+  
+<link rel="stylesheet" href="/blog/css/prism/line-number.min.css">
+
+
+
+<div class="theme-post">
+  <div class="theme-post__background mdui-color-theme"></div>
+  <div class="theme-post__header mdui-color-theme">
+    <div class="theme-post__header__title mdui-text-truncate">
+      对象存储服务MinIO介绍
+    </div>
+    <div class="theme-spacer"></div>
+    <div class="theme-post__header__actions mdui-valign">
+      <div>
+        <span>编写时间：</span>
+        <span style="float: right">2月 05, 2020</span>
+        
+      </div>
+      
+  <div class="theme-post__qrcode">
+    <button class="mdui-btn mdui-ripple mdui-btn-icon mdui-hidden-xs-down" mdui-menu="{target: '#qrcode-menu'}">
+      <i class="mdui-icon material-icons">&#xe337;</i>
+    </button>
+    <ul class="mdui-menu" id="qrcode-menu">
+      <li class="mdui-list-item" style="cursor: auto">
+        文章二维码
+      </li>
+        <img class="mdui-img-fluid" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAT4AAAE+CAAAAAAxUyPsAAAE5ElEQVR42u3awW7bQAwEUP//T6fXAqnlGXLlus3TKYhjSfs2gEYkH1+OxfFAgA8fPnwOfPjw4XPgw/eP8D3i4w8n+vb733+TfPrszC8W8O27z66V30O+dnz48OHDh2/Pl9xuspgE6Hrx7afX23bNMVs7Pnz48OHDd4ovuUweGq5v8Zo1uYc2DOXrerE6fPjw4cOH7+18bXDJ48L1ZuQFiNk248OHDx8+fJ/MlweUpHzQNglmV8SHDx8+fPg+h29zmeTlPCm1b5oEbVT6C70OfPjw4cOHrxzS+v9+fut8Hz58+PDh+/F87dG+qJ96+T8VWZKw8kIAHz58+PDhW/DlD/LrbyWFhk1gSkCTq8/Wiw8fPnz48J3im5WzZ0NmbfE9+ctrlFmh/8Xa8eHDhw8fvgXfpp2ctMNnw2c5xPV123b7asoAHz58+PDhC/g2ASV/RU9e4GeI7ZbMwhA+fPjw4cN3B9+mgL5pRc9CxqwdPqPEhw8fPnz47uBr40hOP4sIeWF9T3x77sOHDx8+fPiCiw1HuBZN8bZYsCnx5/8K+PDhw4cP3ym+2Yt0jj6LCG1xvy0TbMof+PDhw4cP355v1qhO4JIN2BO0Z062/6kMPnz48OHDt+CbFcH3HEVQWKPsSxv48OHDhw/fKb4kLiQP+NmIW37r+ba1hYC26I8PHz58+PBt+Nog0j7+97eec5/agBfnxIcPHz58+A7xtU3xtvGcN9H35Ya8uJ+j48OHDx8+fKf48kd4PprWBo68Md824/O11ANq+PDhw4cP34KvDS6bBnle4s9LA+3W5t/Chw8fPnz47uBLokY7LjZ7vU+a8bMWwv5a+PDhw4cP34avpWxHyvIAMSu4z4oasyY9Pnz48OHDt+drw8GmfJD//j18wxI/Pnz48OHDt+BLHtttgbvdnrZYn0SQtv0wbJPjw4cPHz58JV8eQWYxom1jn4pK+XbWrX18+PDhw4dvwdcOfu2b2We3ZN8gr/9p8OHDhw8fvtv42iCSv/bnjeq8GdAW+pOYsgou+PDhw4cP35OSwakgktO0ISMfJmvbA8m/CD58+PDhw3eKrw0rM7iEqT3/9XdbpluK9fjw4cOHD99lcMmbytFlRn8zGz7Lg1cea6JiPT58+PDhwzfiy4ek94Nrm6HwPLjsB9Hw4cOHDx+++/hmzelNo3oWbvbBZR+S8OHDhw8fvjv42gf/rN2ev97nA2enRsbx4cOHDx++u/lmEO0oW9syb4PLrDBRtPbx4cOHDx++BV9+65umeBuA8piSb1LbEni6Fnz48OHDh+8o36lb2bzSb0biZjGr2GB8+PDhw4fvEN+p4bD72t5tkaKNStEm4cOHDx8+fAu+WaTI+fLSfF5S34ya5UcUXPDhw4cPH76Sry5VX586/jRvq7fhaXPO6C/x4cOHDx++BV/7IM/L5bNbbzeg3Z52IKDOffjw4cOHD1/Atymvtzfdctdt7NEG4MOHDx8+fO/nSwrW9wWLtli/GXTLIxo+fPjw4cP3OXx5GT1pWufFiHagLW+xD6cM8OHDhw8fvrfw5WNnebGgHWjbRKh22A4fPnz48OE7y7d51c9DSduM38Sm2RVv7HXgw4cPHz58i3L5rDWelxL2hf52M6KV4sOHDx8+fAs+R3vgw4cPHz4HPnz48Dnw4fvg4xcH6h1aKZjingAAAABJRU5ErkJggg==" style="cursor: auto">
+    </ul>
+  </div>
+
+
+      
+  <div class="theme-post__share">
+    <button class="mdui-btn mdui-ripple mdui-btn-icon" mdui-menu="{target: '#post-share-menu'}">
+      <i class="mdui-icon material-icons">&#xe80d;</i>
+    </button>
+
+    <ul class="mdui-menu" id="post-share-menu">
+
+      
+        <li class="mdui-menu-item">
+            <a href="https://www.facebook.com/sharer/sharer.php?u=https://rodbate.github.io/blog/blog//blog/2020/02/05/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A8%E6%9C%8D%E5%8A%A1MinIO%E4%BB%8B%E7%BB%8D/index.html" target="_blank" class="mdui-ripple">
+                分享到Facebook
+            </a>
+        </li>
+      
+
+      
+        <li class="mdui-menu-item">
+            <a href="https://plus.google.com/share?url=https://rodbate.github.io/blog/blog//blog/2020/02/05/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A8%E6%9C%8D%E5%8A%A1MinIO%E4%BB%8B%E7%BB%8D/index.html" target="_blank" class="mdui-ripple">
+                分享到Google+
+            </a>
+        </li>
+      
+
+      
+        <li class="mdui-menu-item">
+            <a href="https://www.linkedin.com/shareArticle?mini=true&url=https://rodbate.github.io/blog/blog//blog/2020/02/05/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A8%E6%9C%8D%E5%8A%A1MinIO%E4%BB%8B%E7%BB%8D/index.html&title=对象存储服务MinIO介绍" target="_blank" class="mdui-ripple">
+                分享到Linkedin
+            </a>
+        </li>
+      
+
+      
+        <li class="mdui-menu-item">
+            <a href="http://connect.qq.com/widget/shareqq/index.html?site=Rodbate Blog&title=对象存储服务MinIO介绍&summary=&pics=https://rodbate.github.io/blog/images/avatar.png&url=https://rodbate.github.io/blog/blog/2020/02/05/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A8%E6%9C%8D%E5%8A%A1MinIO%E4%BB%8B%E7%BB%8D/index.html" target="_blank" class="mdui-ripple">
+                分享到QQ
+            </a>
+        </li>
+      
+
+      
+        <li class="mdui-menu-item">
+            <a href="https://telegram.me/share/url?url=https://rodbate.github.io/blog/blog//blog/2020/02/05/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A8%E6%9C%8D%E5%8A%A1MinIO%E4%BB%8B%E7%BB%8D/index.html&text=对象存储服务MinIO介绍" target="_blank" class="mdui-ripple">
+                分享到Telegram
+            </a>
+        </li>
+      
+
+      
+        <li class="mdui-menu-item">
+            <a href="https://twitter.com/intent/tweet?text=对象存储服务MinIO介绍&url=https://rodbate.github.io/blog/blog//blog/2020/02/05/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A8%E6%9C%8D%E5%8A%A1MinIO%E4%BB%8B%E7%BB%8D/index.html&via=Rodbate" target="_blank" class="mdui-ripple">
+                分享到Twitter
+            </a>
+        </li>
+      
+
+      
+        <li class="mdui-menu-item">
+            <a href="http://service.weibo.com/share.php?appkey=&title=对象存储服务MinIO介绍&url=https://rodbate.github.io/blog/blog//blog/2020/02/05/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A8%E6%9C%8D%E5%8A%A1MinIO%E4%BB%8B%E7%BB%8D/index.html&pic=&searchPic=false&style=simple" target="_blank" class="mdui-ripple">
+                分享到微博
+            </a>
+        </li>
+      
+
+    </ul>
+  </div>
+
+
+    </div>
+  </div>
+  <div class="theme-post__warpper
+    
+  ">
+    <div class="theme-post__warpper__container">
+      <article class="mdui-card theme-post__card mdui-hoverable">
+        <section class="theme-post__card__warning">
+          这篇文章最后修改于
+          <span id="content-warning"></span>
+          天之前。
+          本页内容可能已经过时！
+        </section>
+        
+          <section class="theme-post__card__count">
+            
+              <span>
+                本文共1.2k字。
+              </span>
+            
+            
+              <span>
+                阅读大约需要3分钟。
+              </span>
+            
+          </section>
+        
+        
+        <section class="mdui-typo theme-post__card__content">
+          <h2 id="对象存储服务MinIO"><a href="#对象存储服务MinIO" class="headerlink" title="对象存储服务MinIO"></a>对象存储服务MinIO</h2><blockquote>
+<p><code>Open Source, S3 Compatible, Enterprise Hardened and Really, Really Fast</code></p>
+<p>MinIO是一种高性能并兼容Amazon S3 Api的对象存储服务</p>
+<p><a href="https://min.io/" target="_blank" rel="noopener">官网地址</a>  <a href="https://github.com/minio/minio" target="_blank" rel="noopener">Github项目地址</a></p>
+</blockquote>
+<h3 id="MinIO简介"><a href="#MinIO简介" class="headerlink" title="MinIO简介"></a>MinIO简介</h3><h4 id="1-Erasure-Coding-纠删码"><a href="#1-Erasure-Coding-纠删码" class="headerlink" title="1. Erasure Coding(纠删码)"></a>1. Erasure Coding(纠删码)</h4><p>MinIO数据存储数据保护数据采用的是Erasure Coding(纠删码)技术，与之对应人们熟知的是Replication(数据副本)技术, 两者之间的区别就不再赘述了。</p>
+<p>引用官方文档纠删码的应用解析</p>
+<blockquote>
+<p>MinIO protects data with per-object, inline erasure coding which is written in assembly code to deliver the highest performance possible. MinIO uses Reed-Solomon code to stripe objects into n/2 data and n/2 parity blocks - although these can be configured to any desired redundancy level. This means that in a 12 drive setup, an object is sharded across as 6 data and 6 parity blocks. Even if you lose as many as 5 ((n/2)–1) drives, be it parity or data, you can still reconstruct the data reliably from the remaining drives. MinIO’s implementation ensures that objects can be read or new objects written even if multiple devices are lost or unavailable. Finally, MinIO’s erasure code is at the object level and can heal one object at a time.</p>
+</blockquote>
+<p>说白了就是纠删码技术空间占用率低,容错率高。MinIO使用<a href="[https://en.wikipedia.org/wiki/Reed%E2%80%93Solomon_error_correction](https://en.wikipedia.org/wiki/Reed–Solomon_error_correction)">Reed-Solomon</a>编码, 原始数据块=n/2, 校验数据块=n/2,一个对象条形存储在这些快上,容错率为(n/2 - 1)。</p>
+<img src="/blog/2020/02/05/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A8%E6%9C%8D%E5%8A%A1MinIO%E4%BB%8B%E7%BB%8D/erasure-code.svg" class="">
+
+
+
+<h3 id="MinIO服务部署"><a href="#MinIO服务部署" class="headerlink" title="MinIO服务部署"></a>MinIO服务部署</h3><img src="/blog/2020/02/05/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A8%E6%9C%8D%E5%8A%A1MinIO%E4%BB%8B%E7%BB%8D/architecture_diagram.svg" class="">
+
+
+
+<blockquote>
+<p> <code>分布式部署适合生产场景</code></p>
+</blockquote>
+<p><strong><code>分布式部署注意点：</code></strong></p>
+<ol>
+<li>所有参与部署的节点都必须设置相同访问秘钥(即access key和secret key相同);</li>
+<li>MinIO以<code>4, 6, 8, 10, 12, 14, 16</code>的最大公约数创建EC数据集合(每个对象的存储MinIO采用不可逆的哈希算法分到相应的数据集中), 因此MinIO单个集群的硬盘数必须是<code>4, 6, 8, 10, 12, 14, 16</code>其中一个数的倍数;</li>
+<li>MinIO会选择最大的EC数据集合,比如8块硬盘,那么MinIO就会创建1个大小为8的EC数据集合;</li>
+<li>一个对象只会写到一个EC数据集合中, 也就是说一个对象不会存储超过16个硬盘;</li>
+<li>所有参与节点推荐为同构系统</li>
+<li>MinIO数据目录要求为独占</li>
+<li>MinIO节点之间的时间差异不能超过15分钟, 可以使用NTP时间同步</li>
+<li>设置环境变量<code>MINIO_DOMAIN</code>可以支持DNS风格的Bucket Federation模式</li>
+</ol>
+<p>引用官方示例</p>
+<img src="/blog/2020/02/05/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A8%E6%9C%8D%E5%8A%A1MinIO%E4%BB%8B%E7%BB%8D/Architecture-diagram_distributed_32.png" class="">
+
+
+<p>单集群分布式部署示例</p>
+<pre class="line-numbers language-bash" mdui-tooltip="{content: 'bash'}"><code class="language-bash"><span class="token function">export</span> MINIO_ACCESS_KEY<span class="token operator">=</span><span class="token operator">&lt;</span>ACCESS_KEY<span class="token operator">></span>
+<span class="token function">export</span> MINIO_SECRET_KEY<span class="token operator">=</span><span class="token operator">&lt;</span>SECRET_KEY<span class="token operator">></span>
+minio server http://host<span class="token punctuation">{</span>1<span class="token punctuation">..</span>.32<span class="token punctuation">}</span>/export<span class="token punctuation">{</span>1<span class="token punctuation">..</span>.32<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>MinIO分布式模式支持集群扩展</p>
+<pre class="line-numbers language-bash" mdui-tooltip="{content: 'bash'}"><code class="language-bash"><span class="token function">export</span> MINIO_ACCESS_KEY<span class="token operator">=</span><span class="token operator">&lt;</span>ACCESS_KEY<span class="token operator">></span>
+<span class="token function">export</span> MINIO_SECRET_KEY<span class="token operator">=</span><span class="token operator">&lt;</span>SECRET_KEY<span class="token operator">></span>
+minio server http://host<span class="token punctuation">{</span>1<span class="token punctuation">..</span>.32<span class="token punctuation">}</span>/export<span class="token punctuation">{</span>1<span class="token punctuation">..</span>.32<span class="token punctuation">}</span> http://host<span class="token punctuation">{</span>33<span class="token punctuation">..</span>.64<span class="token punctuation">}</span>/export<span class="token punctuation">{</span>1<span class="token punctuation">..</span>.32<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h4 id="多集群Federation模式"><a href="#多集群Federation模式" class="headerlink" title="多集群Federation模式"></a>多集群Federation模式</h4><p>Federation模式适用于MinIO多集群扩展, 在已有集群容量不够的情况下才会采取此模式进行扩展</p>
+<blockquote>
+<p>MinIO单集群是不支持动态扩缩容(增减节点或者硬盘数量)</p>
+<p><a href="https://github.com/minio/minio/issues/7986" target="_blank" rel="noopener">官方ISSUE</a> </p>
+</blockquote>
+<img src="/blog/2020/02/05/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A8%E6%9C%8D%E5%8A%A1MinIO%E4%BB%8B%E7%BB%8D/bucket-lookup.png" class="">
+
+
+
+
+<p>假设MinIO集群拥有四个节点, 每个节点拥有一块硬盘</p>
+<pre class="line-numbers language-bash" mdui-tooltip="{content: 'bash'}"><code class="language-bash"><span class="token function">export</span> MINIO_ACCESS_KEY<span class="token operator">=</span>minio
+<span class="token function">export</span> MINIO_SECRET_KEY<span class="token operator">=</span>minio123
+minio server http://192.168.10.11/data/minio http://192.168.10.12/data/minio http://192.168.10.13/data/minio http://192.168.10.14/data/minio<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>以上集群构成了一个EC数据集合的MinIO的服务集群。</p>
+<h4 id="Nginx反向代理和负载均衡"><a href="#Nginx反向代理和负载均衡" class="headerlink" title="Nginx反向代理和负载均衡"></a>Nginx反向代理和负载均衡</h4><p>在生产分布式模式下, 可以采用nginx以获得以下能力</p>
+<ol>
+<li>HTTPS</li>
+<li>反向代理</li>
+<li>负载均衡</li>
+<li>限流…</li>
+</ol>
+<img src="/blog/2020/02/05/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A8%E6%9C%8D%E5%8A%A1MinIO%E4%BB%8B%E7%BB%8D/minio-instances-load-balanced.png" class="">
+
+<pre class="line-numbers language-nginx" mdui-tooltip="{content: 'nginx'}"><code class="language-nginx"><span class="token comment" spellcheck="true">#示例配置</span>
+<span class="token keyword">upstream</span> minio_servers <span class="token punctuation">{</span>
+    <span class="token keyword">server</span> <span class="token number">192.168</span><span class="token punctuation">.</span><span class="token number">10.11</span><span class="token punctuation">:</span><span class="token number">9000</span><span class="token punctuation">;</span>
+    <span class="token keyword">server</span> <span class="token number">192.168</span><span class="token punctuation">.</span><span class="token number">10.12</span><span class="token punctuation">:</span><span class="token number">9000</span><span class="token punctuation">;</span>
+      <span class="token keyword">server</span> <span class="token number">192.168</span><span class="token punctuation">.</span><span class="token number">10.13</span><span class="token punctuation">:</span><span class="token number">9000</span><span class="token punctuation">;</span>
+      <span class="token keyword">server</span> <span class="token number">192.168</span><span class="token punctuation">.</span><span class="token number">10.14</span><span class="token punctuation">:</span><span class="token number">9000</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">server</span> <span class="token punctuation">{</span>
+    <span class="token keyword">listen</span> <span class="token number">80</span><span class="token punctuation">;</span>
+    <span class="token keyword">server_name</span> www<span class="token punctuation">.</span>example<span class="token punctuation">.</span>com<span class="token punctuation">;</span>
+
+    <span class="token keyword">location</span> <span class="token operator">/</span> <span class="token punctuation">{</span>
+        <span class="token keyword">proxy_set_header</span> Host <span class="token variable">$http_host</span><span class="token punctuation">;</span>
+        <span class="token keyword">proxy_pass</span>       <span class="token keyword">http</span><span class="token punctuation">:</span><span class="token operator">/</span><span class="token operator">/</span>minio_servers<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="MinIO监控"><a href="#MinIO监控" class="headerlink" title="MinIO监控"></a>MinIO监控</h3><h4 id="健康检查-Health-Check"><a href="#健康检查-Health-Check" class="headerlink" title="健康检查(Health Check)"></a>健康检查(Health Check)</h4><ol>
+<li>/minio/health/live  服务是否运行中</li>
+<li>/minio/health/ready  服务是否已就绪</li>
+</ol>
+<h4 id="Promethus监控"><a href="#Promethus监控" class="headerlink" title="Promethus监控"></a>Promethus监控</h4><p><code>/minio/prometheus/metrics</code> 指标Exported URL  详见<a href="https://github.com/minio/minio/blob/master/docs/metrics/prometheus/README.md" target="_blank" rel="noopener">官方文档</a></p>
+<h3 id="MinIO-API"><a href="#MinIO-API" class="headerlink" title="MinIO API"></a>MinIO API</h3><blockquote>
+<p>引用JAVA SDK</p>
+</blockquote>
+<div class="mdui-table-fluid theme-post__card__table--flat"><table class="mdui-table mdui-table-hoverable ">
+<thead>
+<tr>
+<th>Bucket operations (Bucket操作)</th>
+<th>Object operations(对象操作)</th>
+<th>Presigned operations(预签名操作)</th>
+<th>Bucket Policy/LifeCycle Operations(Bucket权限及生命周期操作)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#makeBucket" target="_blank" rel="noopener"><code>makeBucket</code></a></td>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#getObject" target="_blank" rel="noopener"><code>getObject</code></a></td>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#presignedGetObject" target="_blank" rel="noopener"><code>presignedGetObject</code></a></td>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#getBucketPolicy" target="_blank" rel="noopener"><code>getBucketPolicy</code></a></td>
+</tr>
+<tr>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#listBuckets" target="_blank" rel="noopener"><code>listBuckets</code></a></td>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#putObject" target="_blank" rel="noopener"><code>putObject</code></a></td>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#presignedPutObject" target="_blank" rel="noopener"><code>presignedPutObject</code></a></td>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#setBucketPolicy" target="_blank" rel="noopener"><code>setBucketPolicy</code></a></td>
+</tr>
+<tr>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#bucketExists" target="_blank" rel="noopener"><code>bucketExists</code></a></td>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#copyObject" target="_blank" rel="noopener"><code>copyObject</code></a></td>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#presignedPostPolicy" target="_blank" rel="noopener"><code>presignedPostPolicy</code></a></td>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#setBucketLifeCycle" target="_blank" rel="noopener"><code>setBucketLifeCycle</code></a></td>
+</tr>
+<tr>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#removeBucket" target="_blank" rel="noopener"><code>removeBucket</code></a></td>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#statObject" target="_blank" rel="noopener"><code>statObject</code></a></td>
+<td></td>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#getBucketLifeCycle" target="_blank" rel="noopener"><code>getBucketLifeCycle</code></a></td>
+</tr>
+<tr>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#listObjects" target="_blank" rel="noopener"><code>listObjects</code></a></td>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#removeObject" target="_blank" rel="noopener"><code>removeObject</code></a></td>
+<td></td>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#deleteBucketLifeCycle" target="_blank" rel="noopener"><code>deleteBucketLifeCycle</code></a></td>
+</tr>
+<tr>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#listIncompleteUploads" target="_blank" rel="noopener"><code>listIncompleteUploads</code></a></td>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#removeIncompleteUpload" target="_blank" rel="noopener"><code>removeIncompleteUpload</code></a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#listenBucketNotification" target="_blank" rel="noopener"><code>listenBucketNotification</code></a></td>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#composeObject" target="_blank" rel="noopener"><code>composeObject</code></a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#setBucketNotification" target="_blank" rel="noopener"><code>setBucketNotification</code></a></td>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#selectObjectContent" target="_blank" rel="noopener"><code>selectObjectContent</code></a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#getBucketNotification" target="_blank" rel="noopener"><code>getBucketNotification</code></a></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#removeAllBucketNotification" target="_blank" rel="noopener"><code>removeAllBucketNotification</code></a></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#enableVersioning" target="_blank" rel="noopener"><code>enableVersioning</code></a></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#disableVersioning" target="_blank" rel="noopener"><code>disableVersioning</code></a></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#setDefaultRetention" target="_blank" rel="noopener"><code>setDefaultRetention</code></a></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://docs.min.io/docs/java-client-api-reference.html#getDefaultRetention" target="_blank" rel="noopener"><code>getDefaultRetention</code></a></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table></div>
+<p>常用的API一般就是对象操作API, 比如</p>
+<ul>
+<li>getObject: 下载对象</li>
+<li>putObject: 上传对象</li>
+<li>removeObject: 删除对象</li>
+</ul>
+<h4 id="预签名-Presigned-操作的应用场景"><a href="#预签名-Presigned-操作的应用场景" class="headerlink" title="预签名(Presigned)操作的应用场景"></a>预签名(Presigned)操作的应用场景</h4><p>上传(<code>presignedPutObject</code>)或下载(<code>presignedGetObject</code>)时, 客户端可以向服务器获取对应的Presigned Url(预签名URL)的方式来完成操作。</p>
+<p>优点：</p>
+<ul>
+<li>MinIO秘钥统一由服务器管理, 客户端不需要也没必要管理</li>
+<li>获取的预签名URL是有时效性的，安全，时间长短可以由服务器设置</li>
+</ul>
+<p>详见<a href="https://docs.min.io/docs/upload-files-from-browser-using-pre-signed-urls.html" target="_blank" rel="noopener">官方文档介绍</a></p>
+<h3 id="MinIO客户端秘钥收敛-STS模式"><a href="#MinIO客户端秘钥收敛-STS模式" class="headerlink" title="MinIO客户端秘钥收敛(STS模式)"></a>MinIO客户端秘钥收敛(STS模式)</h3><p>客户端访问MinIO的方式可以采用STS(<code>Security Token Service</code>)模式。类似下图</p>
+<p><img src="https://min.io/resources/img/products/identity-management.svg" alt="STS Mode"></p>
+<p>三种角色</p>
+<ul>
+<li>IDP 身份校验服务</li>
+<li>Application 应用服务</li>
+<li>MinIO</li>
+</ul>
+<p>目前MinIO支持以下四种身份校验服务</p>
+<ul>
+<li><a href="https://github.com/minio/minio/blob/master/docs/sts/client-grants.md" target="_blank" rel="noopener"><strong>Client grants</strong></a></li>
+<li><a href="https://github.com/minio/minio/blob/master/docs/sts/web-identity.md" target="_blank" rel="noopener"><strong>WebIdentity</strong></a></li>
+<li><a href="https://github.com/minio/minio/blob/master/docs/sts/assume-role.md" target="_blank" rel="noopener"><strong>AssumeRole</strong></a></li>
+<li><a href="https://github.com/minio/minio/blob/master/docs/sts/ldap.md" target="_blank" rel="noopener"><strong>AD/LDAP</strong></a></li>
+</ul>
+
+        </section>
+
+
+        
+          <section class="mdui-card-actions theme-post__card__actions">
+            <div class="theme-spacer"></div>
+            
+            
+              <div class="mdui-chip theme-post__card__chip--bg theme-post__card__chip--margin">
+                <span class="mdui-chip-icon theme-post__card__chip--bg"><i class="mdui-icon mdui-text-color-black-icon fa fa-tags"></i></span>
+              </div>
+              <div class="mdui-typo">
+                
+                  <a href="/blog/tags/OSS/">
+                    <span>OSS</span>
+                  </a>
+                
+                  <a href="/blog/tags/MinIO/">
+                    <span>MinIO</span>
+                  </a>
+                
+              </div>
+            
+          </section>
+        
+
+        
+          
+            <section>
+              <div class="mdui-divider"></div>
+            </section>
+            <section class="theme-post__card__comment">
+              
+  <div id="disqus_thread"></div>
+  <script>
+    themeRuntime.commentRest.function = function (newIdentifier, newUrl, newTitle) {
+      DISQUS.reset({
+        reload: true,
+        config: function () {
+          this.page.identifier = newIdentifier;
+          this.page.url = newUrl;
+          this.page.title = newTitle;
+        }
+      });
+    }
+    var disqus_config = function () {
+      this.page.url = 'https://rodbate.github.io/blog/2020/02/05/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A8%E6%9C%8D%E5%8A%A1MinIO%E4%BB%8B%E7%BB%8D/';  // Replace PAGE_URL with your page's canonical URL variable
+      this.page.identifier = 'https://rodbate.github.io/blog/2020/02/05/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A8%E6%9C%8D%E5%8A%A1MinIO%E4%BB%8B%E7%BB%8D/'; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+    };
+    (function() { // DON'T EDIT BELOW THIS LINE
+      var d = document, s = d.createElement('script');
+      s.src = '//rodbate.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', +new Date());
+      (d.head || d.body).appendChild(s);
+    })();
+  </script>
+  <noscript>请启用JavaScript以查看<a href="https://disqus.com/?ref_noscript" target="_blank" rel="noopener">来自Disqus的评论</a></noscript>
+
+
+            </section>
+          
+        
+      </article>
+      
+        <div class="mdui-color-theme theme-post__toc">
+          <html><head></head><body><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#&#x5BF9;&#x8C61;&#x5B58;&#x50A8;&#x670D;&#x52A1;MinIO" data-href="#&#x5BF9;&#x8C61;&#x5B58;&#x50A8;&#x670D;&#x52A1;MinIO"><span class="toc-number"></span> <span class="toc-text">1. &#x5BF9;&#x8C61;&#x5B58;&#x50A8;&#x670D;&#x52A1;MinIO</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#MinIO&#x7B80;&#x4ECB;" data-href="#MinIO&#x7B80;&#x4ECB;"><span class="toc-number"></span> <span class="toc-text">1.1. MinIO&#x7B80;&#x4ECB;</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#1-Erasure-Coding-&#x7EA0;&#x5220;&#x7801;" data-href="#1-Erasure-Coding-&#x7EA0;&#x5220;&#x7801;"><span class="toc-number"></span> <span class="toc-text">1.1.1. 1. Erasure Coding(&#x7EA0;&#x5220;&#x7801;)</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#MinIO&#x670D;&#x52A1;&#x90E8;&#x7F72;" data-href="#MinIO&#x670D;&#x52A1;&#x90E8;&#x7F72;"><span class="toc-number"></span> <span class="toc-text">1.2. MinIO&#x670D;&#x52A1;&#x90E8;&#x7F72;</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#&#x591A;&#x96C6;&#x7FA4;Federation&#x6A21;&#x5F0F;" data-href="#&#x591A;&#x96C6;&#x7FA4;Federation&#x6A21;&#x5F0F;"><span class="toc-number"></span> <span class="toc-text">1.2.1. &#x591A;&#x96C6;&#x7FA4;Federation&#x6A21;&#x5F0F;</span></a></li><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#Nginx&#x53CD;&#x5411;&#x4EE3;&#x7406;&#x548C;&#x8D1F;&#x8F7D;&#x5747;&#x8861;" data-href="#Nginx&#x53CD;&#x5411;&#x4EE3;&#x7406;&#x548C;&#x8D1F;&#x8F7D;&#x5747;&#x8861;"><span class="toc-number"></span> <span class="toc-text">1.2.2. Nginx&#x53CD;&#x5411;&#x4EE3;&#x7406;&#x548C;&#x8D1F;&#x8F7D;&#x5747;&#x8861;</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#MinIO&#x76D1;&#x63A7;" data-href="#MinIO&#x76D1;&#x63A7;"><span class="toc-number"></span> <span class="toc-text">1.3. MinIO&#x76D1;&#x63A7;</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#&#x5065;&#x5EB7;&#x68C0;&#x67E5;-Health-Check" data-href="#&#x5065;&#x5EB7;&#x68C0;&#x67E5;-Health-Check"><span class="toc-number"></span> <span class="toc-text">1.3.1. &#x5065;&#x5EB7;&#x68C0;&#x67E5;(Health Check)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#Promethus&#x76D1;&#x63A7;" data-href="#Promethus&#x76D1;&#x63A7;"><span class="toc-number"></span> <span class="toc-text">1.3.2. Promethus&#x76D1;&#x63A7;</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#MinIO-API" data-href="#MinIO-API"><span class="toc-number"></span> <span class="toc-text">1.4. MinIO API</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#&#x9884;&#x7B7E;&#x540D;-Presigned-&#x64CD;&#x4F5C;&#x7684;&#x5E94;&#x7528;&#x573A;&#x666F;" data-href="#&#x9884;&#x7B7E;&#x540D;-Presigned-&#x64CD;&#x4F5C;&#x7684;&#x5E94;&#x7528;&#x573A;&#x666F;"><span class="toc-number"></span> <span class="toc-text">1.4.1. &#x9884;&#x7B7E;&#x540D;(Presigned)&#x64CD;&#x4F5C;&#x7684;&#x5E94;&#x7528;&#x573A;&#x666F;</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#MinIO&#x5BA2;&#x6237;&#x7AEF;&#x79D8;&#x94A5;&#x6536;&#x655B;-STS&#x6A21;&#x5F0F;" data-href="#MinIO&#x5BA2;&#x6237;&#x7AEF;&#x79D8;&#x94A5;&#x6536;&#x655B;-STS&#x6A21;&#x5F0F;"><span class="toc-number"></span> <span class="toc-text">1.5. MinIO&#x5BA2;&#x6237;&#x7AEF;&#x79D8;&#x94A5;&#x6536;&#x655B;(STS&#x6A21;&#x5F0F;)</span></a></li></ol></li></ol></body></html>
+        </div>
+      
+    </div>
+  </div>
+
+  <div class="theme-spacer"></div>
+
+  
+    <div class="mdui-color-theme theme-post__toc-fab">
+  <button class="mdui-fab mdui-color-theme-accent mdui-ripple mdui-fab-fixed mdui-hidden-md-up" mdui-menu="{target: '#toc-fab-menu', fixed: true}" id="toc-fab">
+    <i class="mdui-icon material-icons">&#xe242;</i>
+  </button>
+  <ul class="mdui-menu mdui-typo theme-post__toc-fab__menu" id="toc-fab-menu" style="padding: 8px;max-height: 80%">
+    <html><head></head><body><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#&#x5BF9;&#x8C61;&#x5B58;&#x50A8;&#x670D;&#x52A1;MinIO" data-href="#&#x5BF9;&#x8C61;&#x5B58;&#x50A8;&#x670D;&#x52A1;MinIO"><span class="toc-number"></span> <span class="toc-text">1. &#x5BF9;&#x8C61;&#x5B58;&#x50A8;&#x670D;&#x52A1;MinIO</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#MinIO&#x7B80;&#x4ECB;" data-href="#MinIO&#x7B80;&#x4ECB;"><span class="toc-number"></span> <span class="toc-text">1.1. MinIO&#x7B80;&#x4ECB;</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#1-Erasure-Coding-&#x7EA0;&#x5220;&#x7801;" data-href="#1-Erasure-Coding-&#x7EA0;&#x5220;&#x7801;"><span class="toc-number"></span> <span class="toc-text">1.1.1. 1. Erasure Coding(&#x7EA0;&#x5220;&#x7801;)</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#MinIO&#x670D;&#x52A1;&#x90E8;&#x7F72;" data-href="#MinIO&#x670D;&#x52A1;&#x90E8;&#x7F72;"><span class="toc-number"></span> <span class="toc-text">1.2. MinIO&#x670D;&#x52A1;&#x90E8;&#x7F72;</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#&#x591A;&#x96C6;&#x7FA4;Federation&#x6A21;&#x5F0F;" data-href="#&#x591A;&#x96C6;&#x7FA4;Federation&#x6A21;&#x5F0F;"><span class="toc-number"></span> <span class="toc-text">1.2.1. &#x591A;&#x96C6;&#x7FA4;Federation&#x6A21;&#x5F0F;</span></a></li><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#Nginx&#x53CD;&#x5411;&#x4EE3;&#x7406;&#x548C;&#x8D1F;&#x8F7D;&#x5747;&#x8861;" data-href="#Nginx&#x53CD;&#x5411;&#x4EE3;&#x7406;&#x548C;&#x8D1F;&#x8F7D;&#x5747;&#x8861;"><span class="toc-number"></span> <span class="toc-text">1.2.2. Nginx&#x53CD;&#x5411;&#x4EE3;&#x7406;&#x548C;&#x8D1F;&#x8F7D;&#x5747;&#x8861;</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#MinIO&#x76D1;&#x63A7;" data-href="#MinIO&#x76D1;&#x63A7;"><span class="toc-number"></span> <span class="toc-text">1.3. MinIO&#x76D1;&#x63A7;</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#&#x5065;&#x5EB7;&#x68C0;&#x67E5;-Health-Check" data-href="#&#x5065;&#x5EB7;&#x68C0;&#x67E5;-Health-Check"><span class="toc-number"></span> <span class="toc-text">1.3.1. &#x5065;&#x5EB7;&#x68C0;&#x67E5;(Health Check)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#Promethus&#x76D1;&#x63A7;" data-href="#Promethus&#x76D1;&#x63A7;"><span class="toc-number"></span> <span class="toc-text">1.3.2. Promethus&#x76D1;&#x63A7;</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#MinIO-API" data-href="#MinIO-API"><span class="toc-number"></span> <span class="toc-text">1.4. MinIO API</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#&#x9884;&#x7B7E;&#x540D;-Presigned-&#x64CD;&#x4F5C;&#x7684;&#x5E94;&#x7528;&#x573A;&#x666F;" data-href="#&#x9884;&#x7B7E;&#x540D;-Presigned-&#x64CD;&#x4F5C;&#x7684;&#x5E94;&#x7528;&#x573A;&#x666F;"><span class="toc-number"></span> <span class="toc-text">1.4.1. &#x9884;&#x7B7E;&#x540D;(Presigned)&#x64CD;&#x4F5C;&#x7684;&#x5E94;&#x7528;&#x573A;&#x666F;</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#MinIO&#x5BA2;&#x6237;&#x7AEF;&#x79D8;&#x94A5;&#x6536;&#x655B;-STS&#x6A21;&#x5F0F;" data-href="#MinIO&#x5BA2;&#x6237;&#x7AEF;&#x79D8;&#x94A5;&#x6536;&#x655B;-STS&#x6A21;&#x5F0F;"><span class="toc-number"></span> <span class="toc-text">1.5. MinIO&#x5BA2;&#x6237;&#x7AEF;&#x79D8;&#x94A5;&#x6536;&#x655B;(STS&#x6A21;&#x5F0F;)</span></a></li></ol></li></ol></body></html>
+  </ul>
+</div>
+
+  
+
+  
+    <div class="theme-post__pagination mdui-color-theme">
+  
+    <div class="theme-spacer mdui-hidden-xs"></div>
+  
+
+  
+      <div class="theme-spacer mdui-hidden-xs"></div>
+    
+</div>
+
+  
+</div>
+<script type="text/javascript">
+  themeRuntime.scriptsMap.post = [];
+  if (document.querySelector('.theme-post__toc-fab__menu > ol') !== null && document.querySelector('.theme-post__toc > ol') !== null) {
+    tocHighlight()
+    function tocHighlight() {
+      var timer;
+      function doWork() {
+        listens.forEach(function(value, index) {
+          value[1]();
+          value[0].classList.remove("mdui-list-item-active");
+        })
+        let actionToc = (listens[listens.reduce(function(r, v, index) {
+          if (v[2] == true) {
+            return index;
+          } else return r;
+        }, undefined)] || [])[0] || listens[0][0];
+        actionToc.classList.add("mdui-list-item-active");
+        if(actionToc.getClientRects().length == 0)return;
+        showToc(actionToc);
+      }
+      function showToc(toc) {
+        let offsetTop = toc.getClientRects()[0].top - cardToc.getClientRects()[0].top - 40;
+        let offsetBottom = toc.getClientRects()[0].bottom - cardToc.getClientRects()[0].bottom + 40;
+        let offset = 0;
+        if (offsetTop < 0) offset = offsetTop;
+        if (offsetBottom > 0) offset = offsetBottom;
+        var targetTop = Math.max(0, Math.min(cardToc.scrollTop + offset, toclist.offsetHeight - cardToc.offsetHeight));
+        clearInterval(timer);
+        timer = setInterval(function() {
+          var now = cardToc.scrollTop;
+          var speed = (targetTop - now) / 10;
+          speed = speed > 0 ? Math.ceil(speed) : Math.floor(speed);
+          if (Math.abs(now - targetTop) < 1) {
+            clearInterval(timer);
+          }
+          cardToc.scrollTop = now + speed;
+        }, 30);
+      }
+      var listens = [];
+      var cardToc = document.querySelector('.theme-post__toc');
+      var links = cardToc.querySelectorAll(".theme-post__toc__content__link");
+      var toclist = document.querySelector(".theme-post__toc > ol");
+      Array.prototype.forEach.call(links, function(value, index) {
+        var id = (value.getAttribute("href") || "#").slice(1);
+        var element = document.getElementById(id);
+        listens.push([value, function() {
+          var readed = false;
+          var scrollTop = (document.documentElement && document.documentElement.scrollTop) || document.body.scrollTop;
+          if (element.offsetTop <= scrollTop + element.clientHeight + 64) {
+            readed = true;
+          } else {
+            readed = false;
+          }
+          listens[index][2] = readed;
+        }, false])
+      })
+      doWork();
+      window.addEventListener("scroll", doWork)
+      var listener = {
+        function:  doWork,
+        event: 'scroll',
+        el: window,
+        removed: false
+      }
+      themeRuntime.scriptsMap.post.push(listener)
+    }
+  }
+</script>
+
+<script type="text/javascript">
+  (function() {
+    var postLastModifiedDate = 1580869451468
+    var today = (new Date()).getTime()
+    var difference = Math.floor((today - postLastModifiedDate)/(24*60*60*1000))
+    if (difference >= 100) {
+      document.querySelector('.theme-post__card__warning').style.display = 'block'
+      document.querySelector('#content-warning').textContent = difference
+    }
+  })();
+</script>
+
+<script type="text/javascript">
+  var images = document.querySelectorAll('.theme-post__card__content img')
+  for (i = 0; i < images.length; i++) {
+    //console.log('image added', i)
+    images[i].addEventListener("click", openLG);
+    var listener = {
+      function:  openLG,
+      event: 'click',
+      el: images[i],
+      removed: false
+    }
+    themeRuntime.scriptsMap.post.push(listener)
+  }
+  function openLG() {
+    var img_src = this.getAttribute('src');
+    var img_alt = this.getAttribute('alt');
+    lightGallery(this, {
+      dynamic: true,
+      counter: false,
+      dynamicEl: [{
+        "src": img_src,
+        'subHtml': "<span author>Rodbate</span><div descr>" + img_alt + "</div>"
+      }],
+    });
+  }
+</script>
+
+
+
+
+      </div>
+    </div>
+  </main>
+
+  <div id="outdated" style="z-index: 9999;">
+    <h6>你的浏览器已经过气辣！</h6>
+    <p>赶紧升级浏览器来访问本站吧！<a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">现在就去</a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="关闭">&times;</a></p>
+  </div>
+  <!-- import js -->
+
+
+  
+<script src="/blog/js/outdatedbrowser.min.js"></script>
+
+
+
+
+  
+    
+<script src="/blog/js/js.barba.min.js"></script>
+
+    <script type="text/javascript">
+      Barba.Utils.errorPageUrl = '/blog/404.html';
+    </script>
+  
+
+
+<!-- theme js -->
+<script type="text/javascript">
+  (function() {
+    var appbarTopFlag = false;
+    var appbarEl = document.querySelector('.theme-appbar');
+    function appbarShadow() {
+      var bodyScrolled = (document.documentElement && document.documentElement.scrollTop) || document.body.scrollTop;
+      if (bodyScrolled > 0 && !appbarTopFlag) {
+        appbarEl.classList.add('theme-appbar--shadow');
+        appbarTopFlag = true;
+      } else if (bodyScrolled === 0 && appbarTopFlag) {
+        appbarEl.classList.remove('theme-appbar--shadow');
+        appbarTopFlag = false;
+      }
+    }
+    appbarShadow()
+    window.addEventListener('scroll', appbarShadow);
+  })();
+</script>
+
+
+
+
+
+
+<script type="text/javascript">
+  document.querySelector('body').classList.add('theme-loaded')
+</script>
+
+
+
+
+</body>
+</html>
