@@ -28,7 +28,7 @@ MinIO数据存储数据保护数据采用的是Erasure Coding(纠删码)技术�
 
 >MinIO protects data with per-object, inline erasure coding which is written in assembly code to deliver the highest performance possible. MinIO uses Reed-Solomon code to stripe objects into n/2 data and n/2 parity blocks - although these can be configured to any desired redundancy level. This means that in a 12 drive setup, an object is sharded across as 6 data and 6 parity blocks. Even if you lose as many as 5 ((n/2)–1) drives, be it parity or data, you can still reconstruct the data reliably from the remaining drives. MinIO’s implementation ensures that objects can be read or new objects written even if multiple devices are lost or unavailable. Finally, MinIO's erasure code is at the object level and can heal one object at a time.
 
-说白了就是纠删码技术空间占用率低,容错率高。MinIO使用[Reed-Solomon]([https://en.wikipedia.org/wiki/Reed%E2%80%93Solomon_error_correction](https://en.wikipedia.org/wiki/Reed–Solomon_error_correction))编码, 原始数据块=n/2, 校验数据块=n/2,一个对象条形存储在这些快上,容错率为(n/2 - 1)。
+说白了就是纠删码技术空间占用率低,容错率高。MinIO使用[Reed-Solomon](https://en.wikipedia.org/wiki/Reed–Solomon_error_correction)编码, 原始数据块=n/2, 校验数据块=n/2,一个对象条形存储在这些快上,容错率为(n/2 - 1)。
 
 ![](/blog/images/minio/erasure-code.svg)
 
