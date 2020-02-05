@@ -30,13 +30,13 @@ MinIO数据存储数据保护数据采用的是Erasure Coding(纠删码)技术�
 
 说白了就是纠删码技术空间占用率低,容错率高。MinIO使用[Reed-Solomon]([https://en.wikipedia.org/wiki/Reed%E2%80%93Solomon_error_correction](https://en.wikipedia.org/wiki/Reed–Solomon_error_correction))编码, 原始数据块=n/2, 校验数据块=n/2,一个对象条形存储在这些快上,容错率为(n/2 - 1)。
 
-{% asset_img erasure-code.svg %}
+![](/blog/images/minio/erasure-code.svg)
 
 
 
 ###  MinIO服务部署
 
-{% asset_img architecture_diagram.svg %}
+![](/blog/images/minio/architecture_diagram.svg)
 
 
 
@@ -57,7 +57,7 @@ MinIO数据存储数据保护数据采用的是Erasure Coding(纠删码)技术�
 
 引用官方示例
 
-{% asset_img Architecture-diagram_distributed_32.png %}
+![](/blog/images/minio/Architecture-diagram_distributed_32.png)
 
 
 单集群分布式部署示例
@@ -88,7 +88,7 @@ Federation模式适用于MinIO多集群扩展, 在已有集群容量不够的情
 >
 > [官方ISSUE](https://github.com/minio/minio/issues/7986) 
 
-{% asset_img bucket-lookup.png %}
+![](/blog/images/minio/bucket-lookup.png)
 
 
 
@@ -114,7 +114,7 @@ minio server http://192.168.10.11/data/minio http://192.168.10.12/data/minio htt
 3. 负载均衡
 4. 限流...
 
-{% asset_img minio-instances-load-balanced.png %}
+![](/blog/images/minio/minio-instances-load-balanced.png)
 
 ```nginx
 #示例配置
@@ -209,7 +209,7 @@ server {
 
 客户端访问MinIO的方式可以采用STS(`Security Token Service`)模式。类似下图
 
-![STS Mode](https://min.io/resources/img/products/identity-management.svg)
+![STS Mode](/blog/images/minio/identity-management.svg)
 
 三种角色
 
