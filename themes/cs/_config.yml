@@ -32,7 +32,7 @@ search: true
 # Post
 post:
   entry_excerpt: 80
-  random_pics: false
+  random_pics: true
   qr_code: true
   prism:
     theme: xonokai
