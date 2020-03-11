@@ -1,0 +1,1143 @@
+
+<!DOCTYPE html>
+<html lang="zh">
+
+
+
+<head>
+  <script>
+    window.themeRuntime = {
+      root: "/blog/",
+      scriptsMap: {},
+      init: {
+        status: false
+      },
+      commentRest: {
+        status: false
+      },
+      versions: {
+        theme: "2.0.3",
+        mdui: "0.4.0",
+        fetch: "3.0.0",
+        es6promise: "4.2.5+7f2b526d",
+        lightgallery: "1.0.1",
+        smoothscroll: "15.2.0"
+      }
+      
+    };
+
+  </script>
+
+
+  <meta charset="UTF-8">
+  <title>Spring Aware接口执行时机源码深度解读 - Rodbate Blog</title>
+
+  <!-- Favicons -->
+  <link rel="icon shortcut" type="image/ico" href="/blog/images/avatar.png">
+  <link rel="icon" sizes="192x192" href="/blog/images/avatar.png">
+  <link rel="apple-touch-icon" href="/blog/images/avatar.png">
+
+  <!-- Meta & Info -->
+  <meta http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  <meta name="theme-color" content="#fff">
+
+  <meta name="author" content="Rodbate">
+  
+  <meta name="keywords" content="rodbate, blog, java,Spring,Java">
+
+  <!--iOS -->
+  <meta name="apple-mobile-web-app-title" content="Rodbate Blog">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="480">
+
+  <!-- Add to homescreen for Chrome on Android -->
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- The Open Graph protocol -->
+  <meta property="og:url" content="https://rodbate.github.io/blog">
+  <meta property="og:type" content="blog">
+  <meta property="og:title" content="Spring Aware接口执行时机源码深度解读 - Rodbate Blog | Rodbate Blog">
+  <meta property="og:image" content="/images/avatar.png" />
+  
+
+  
+    <meta property="og:article:tag" content="Spring">
+  
+    <meta property="og:article:tag" content="Java">
+  
+
+  
+
+  <!-- Import CSS -->
+  
+    
+<link rel="stylesheet" href="/blog/css/mdui.css">
+
+  
+
+  
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body class="mdui-drawer-body-left mdui-theme-primary-deep-purple mdui-theme-accent-red">
+
+  <style>
+    #spinner {
+      display: -webkit-box;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+      -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+          opacity: 1;
+      -webkit-transition: opacity 0.3s cubic-bezier(0, 0, 0.2, 1);
+          transition: opacity 0.3s cubic-bezier(0, 0, 0.2, 1);
+    }
+    main {
+      opacity: 0;
+      -webkit-transition: opacity 0.3s cubic-bezier(0, 0, 0.2, 1);
+      transition: opacity 0.3s cubic-bezier(0, 0, 0.2, 1);
+      display: none;
+    }
+  </style>
+  <div id="spinner">
+    <style>
+      .spinner {
+
+      -webkit-animation: rotator 1.4s linear infinite;
+              animation: rotator 1.4s linear infinite;
+      }
+
+      @-webkit-keyframes rotator {
+      0% {
+        -webkit-transform: rotate(0deg);
+                transform: rotate(0deg);
+      }
+      100% {
+        -webkit-transform: rotate(270deg);
+                transform: rotate(270deg);
+      }
+      }
+
+      @keyframes rotator {
+      0% {
+        -webkit-transform: rotate(0deg);
+                transform: rotate(0deg);
+      }
+      100% {
+        -webkit-transform: rotate(270deg);
+                transform: rotate(270deg);
+      }
+      }
+
+      .path {
+      stroke-dasharray: 187;
+      stroke-dashoffset: 0;
+      -webkit-transform-origin: center;
+              transform-origin: center;
+      -webkit-animation: dash 1.4s ease-in-out infinite, colors 5.6s ease-in-out infinite;
+              animation: dash 1.4s ease-in-out infinite, colors 5.6s ease-in-out infinite;
+      }
+
+      @-webkit-keyframes colors {
+      0% {
+        stroke: #4285F4;
+      }
+      25% {
+        stroke: #DE3E35;
+      }
+      50% {
+        stroke: #F7C223;
+      }
+      75% {
+        stroke: #1B9A59;
+      }
+      100% {
+        stroke: #4285F4;
+      }
+      }
+
+      @keyframes colors {
+      0% {
+        stroke: #4285F4;
+      }
+      25% {
+        stroke: #DE3E35;
+      }
+      50% {
+        stroke: #F7C223;
+      }
+      75% {
+        stroke: #1B9A59;
+      }
+      100% {
+        stroke: #4285F4;
+      }
+      }
+
+      @-webkit-keyframes dash {
+      0% {
+        stroke-dashoffset: 187;
+      }
+      50% {
+        stroke-dashoffset: 46.75;
+        -webkit-transform: rotate(135deg);
+                transform: rotate(135deg);
+      }
+      100% {
+        stroke-dashoffset: 187;
+        -webkit-transform: rotate(450deg);
+                transform: rotate(450deg);
+      }
+      }
+
+      @keyframes dash {
+      0% {
+        stroke-dashoffset: 187;
+      }
+      50% {
+        stroke-dashoffset: 46.75;
+        -webkit-transform: rotate(135deg);
+                transform: rotate(135deg);
+      }
+      100% {
+        stroke-dashoffset: 187;
+        -webkit-transform: rotate(450deg);
+                transform: rotate(450deg);
+      }
+      }
+    </style>
+    <svg class="spinner" width="65px" height="65px" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+      <circle class="path" fill="none" stroke-width="6" stroke-linecap="round" cx="33" cy="33" r="30"></circle>
+    </svg>
+  </div>
+
+  <main>
+    <div class="mdui-appbar mdui-appbar-fixed mdui-color-white mdui-shadow-0 theme-appbar">
+  <div class="mdui-toolbar theme-toolbar-top">
+    
+      <a href="/blog/" class="mdui-btn mdui-btn-icon mdui-ripple theme-appbar__burger theme-appbar__burger--arrow">
+        <i class="mdui-icon">
+          <span></span>
+        </i>
+      </a>
+    
+  </div>
+  <div class="mdui-toolbar theme-toolbar-bottom">
+    <span class="theme-toolbar-bottom__title">Rodbate Blog</span>
+    
+      <a href="/blog/search.html" class="mdui-textfield-icon mdui-btn mdui-btn-icon theme-toolbar-bottom__search">
+        <i class="mdui-icon material-icons">&#xe8b6;</i>
+      </a>
+    
+  </div>
+  <div class="mdui-progress theme-appbar__progress" id="progressBar">
+    <div class="mdui-progress-indeterminate"></div>
+  </div>
+</div>
+
+    <div class="mdui-drawer mdui-drawer-full-height theme-drawer" id="drawer">
+  <!-- header -->
+  <div class="theme-drawer__header">
+  <div class="theme-drawer__header__layer-1">
+    <div class="mdui-toolbar theme-toolbar-top">
+      
+        <a href="javascript:;" class="mdui-btn mdui-btn-icon mdui-ripple theme-appbar__burger theme-appbar__burger--drawer theme-appbar__burger--arrow" id="drawer-back">
+          <i class="mdui-icon">
+            <span></span>
+          </i>
+        </a>
+      
+    </div>
+    <div class="mdui-toolbar theme-toolbar-bottom">
+      <span class="theme-toolbar-bottom__title">Rodbate Blog</span>
+    </div>
+  </div>
+  <div class="theme-drawer__header__layer-2" style="background-image: url(/blog/images/bg.jpg)">
+    <img class="mdui-img-circle theme-drawer__header__layer-2__user__avatar" src="/blog/images/avatar.png"/>
+    <div class="theme-drawer__header__layer-2__user__info">
+      <div class="theme-drawer__header__layer-2__user__info__author mdui-text-color-white-text">
+        Rodbate
+      </div>
+      <div class="theme-drawer__header__layer-2__user__info__slogan mdui-text-color-white-secondary">
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  <div class="theme-drawer__warpper">
+    <!-- content -->
+    <div class="theme-drawer__warpper__content">
+  <ul class="mdui-list">
+    <a href="/blog/" class="mdui-list-item mdui-ripple mdui-ripple-white">
+      <i class="mdui-list-item-icon mdui-icon material-icons">&#xe88a;</i>
+      <div class="mdui-list-item-content">首页</div>
+    </a>
+    <a href="/blog/archives/" class="mdui-list-item mdui-ripple mdui-ripple-white">
+      <i class="mdui-list-item-icon mdui-icon material-icons">&#xe149;</i>
+      <div class="mdui-list-item-content">归档</div>
+    </a>
+    <ul class="mdui-list mdui-collapse" mdui-collapse="{accordion: true}" mdui-collapse>
+      
+      
+        <div class="mdui-collapse-item ">
+          <div class="mdui-collapse-item-header mdui-list-item mdui-ripple mdui-ripple-white">
+            <i class="mdui-list-item-icon mdui-icon fa fa-tags mdui-text-center"></i>
+            <div class="mdui-list-item-content">标签</div>
+            <i class="mdui-collapse-item-arrow mdui-icon material-icons">&#xe5c5;</i>
+          </div>
+          <div class="mdui-collapse-item-body mdui-list">
+            
+              <a href="/blog/tags/Spring/" class="mdui-list-item mdui-ripple mdui-ripple-white" style="display: flex">
+                Spring
+                <div style="flex-grow: 1;"></div>
+                <span class="theme-menu-badge new mdui-color-theme-accent" data-badge-caption="">1</span>
+              </a>
+            
+              <a href="/blog/tags/Java/" class="mdui-list-item mdui-ripple mdui-ripple-white" style="display: flex">
+                Java
+                <div style="flex-grow: 1;"></div>
+                <span class="theme-menu-badge new mdui-color-theme-accent" data-badge-caption="">1</span>
+              </a>
+            
+              <a href="/blog/tags/OSS/" class="mdui-list-item mdui-ripple mdui-ripple-white" style="display: flex">
+                OSS
+                <div style="flex-grow: 1;"></div>
+                <span class="theme-menu-badge new mdui-color-theme-accent" data-badge-caption="">1</span>
+              </a>
+            
+              <a href="/blog/tags/MinIO/" class="mdui-list-item mdui-ripple mdui-ripple-white" style="display: flex">
+                MinIO
+                <div style="flex-grow: 1;"></div>
+                <span class="theme-menu-badge new mdui-color-theme-accent" data-badge-caption="">1</span>
+              </a>
+            
+          </div>
+        </div>
+      
+      <div class="mdui-collapse-item ">
+        <div class="mdui-collapse-item-header mdui-list-item mdui-ripple mdui-ripple-white">
+          <i class="mdui-list-item-icon mdui-icon material-icons">&#xe916;</i>
+          <div class="mdui-list-item-content">年份</div>
+          <i class="mdui-collapse-item-arrow mdui-icon material-icons">&#xe5c5;</i>
+        </div>
+        <div class="mdui-collapse-item-body mdui-list">
+          
+          
+            <a href="/blog/archives/2020/" class="mdui-list-item mdui-ripple">
+              2020
+            </a>
+          
+        </div>
+      </div>
+    </ul>
+  </ul>
+  
+    <div class="mdui-divider"></div>
+    <ul class="mdui-list" mdui-collapse="{accordion: true}" mdui-collapse>
+      
+        
+          
+            <a href="https://github.com/rodbate" target="_self" class="mdui-list-item mdui-ripple mdui-ripple-white">
+          
+              
+              
+                <i class="mdui-list-item-icon mdui-icon material-icons">&#xe0ba;</i>
+              
+              
+              <div class="mdui-list-item-content">Github</div>
+            </a>
+        
+      
+    </ul>
+  
+</div>
+
+    <div class="theme-spacer"></div>
+    <!-- footer -->
+    <div class="theme-drawer__warpper__footer">
+  <div class="mdui-typo mdui-typo-caption-opacity">
+    <span>
+      Copyright ©
+      <span year></span>
+      Rodbate
+    </span>
+    
+    
+      <br />
+      <span>
+        最后更新于: 3月 11, 2020
+      </span>
+    
+    
+  </div>
+</div>
+<script type="text/javascript">
+  var copyrightNow = new Date().getFullYear();
+  var textContent = document.querySelector('span[year]')
+  
+    textContent.textContent = copyrightNow
+  
+</script>
+
+  </div>
+</div>
+
+    <div id="top"></div>
+
+    
+<script src="/blog/js/lightgallery.min.js"></script>
+
+
+    <div id="barba-wrapper">
+      <div class="barba-container"  data-namespace="post">
+        
+
+
+
+  
+<link rel="stylesheet" href="/blog/css/prism/xonokai.min.css">
+
+
+
+  
+<link rel="stylesheet" href="/blog/css/prism/line-number.min.css">
+
+
+
+<div class="theme-post">
+  <div class="theme-post__background mdui-color-theme"></div>
+  <div class="theme-post__header mdui-color-theme">
+    <div class="theme-post__header__title mdui-text-truncate">
+      Spring Aware接口执行时机源码深度解读
+    </div>
+    <div class="theme-spacer"></div>
+    <div class="theme-post__header__actions mdui-valign">
+      <div>
+        <span>编写时间：</span>
+        <span style="float: right">3月 11, 2020</span>
+        
+      </div>
+      
+  <div class="theme-post__qrcode">
+    <button class="mdui-btn mdui-ripple mdui-btn-icon mdui-hidden-xs-down" mdui-menu="{target: '#qrcode-menu'}">
+      <i class="mdui-icon material-icons">&#xe337;</i>
+    </button>
+    <ul class="mdui-menu" id="qrcode-menu">
+      <li class="mdui-list-item" style="cursor: auto">
+        文章二维码
+      </li>
+        <img class="mdui-img-fluid" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAVYAAAFWCAAAAAAXxOpfAAAFgUlEQVR42u3aUXLbMAwE0Nz/0u0BWiu7gNKa8uOXxxPJ5GM+dgB8/bJ+YH0hwIoVq4UVK1YLK1asFtajWL/i9ZcXvfj+1ZuTZ5O/v97Vq/fP9pCbYMWKFStWrOeyfhMdXmzo1VH//P4aqAW9fjbZ2+zKvzHBihUrVqxYD2dNaHK4/JDtheWXMYtZw38XrFixYsWK9cNYZwWR681tYtxmb+15sWLFihUrVqx5uyUJScmz+R7ya7v+HitWrFixYv0c1uTnZ59zlNlYRh6YWtZ/1MvCihUrVqxY/yvrJgw99XM9tIEVK1asWLEeyNqudqhiM3gx+928vJKXbCIZrFixYsWK9UDWtuHRHjgZp5gFvuQ9baNo5YAVK1asWLEeyzoLGXlDJR+naANc3p7JWziz0Q2sWLFixYr1RNa7okZe/siHG/KizF3FlxYXK1asWLFiPZ11X5JoKfPmyiac5Xu+Jk6uAStWrFixYj2ddd8suSs8bUo57TcR1mwQEytWrFixYj2QtcWdHaNtyST7nMXEzWVgxYoVK1asz2PNWxot02w8YlYoads8bYBblVqwYsWKFSvWN2OtH14wbVoaszLQhr4dTsWKFStWrFhPZM1LG+1qN9dGvXa3s7/PxzqxYsWKFSvWc1nvjVx59Lk+wP497QjIbNQDK1asWLFifRLrrImSfG7bMJtmyWZ8c9i8wYoVK1asWA9kLZoKN7U37m1+tBBJ0SQPl1ixYsWKFeszWJPYlIeYdhQjKeLk9LPd3tA0wooVK1asWA9kbccdvhlBuBVoE8j2F9xCY8WKFStWrM9gnY04bMJQfm2bJk0eyG7uZWHFihUrVqxvzJq8ut3QPsTMhjDagk5+0lUFCytWrFixYn171jZ2tKWNTaEk38lsP/l5h4OYWLFixYoV6yGsbfukbZzkR2rbNtffJDvJL+DlqbFixYoVK9YDWdtgsW/S5MWa9p1tjLt5QAQrVqxYsWI9kDVvUdSBYzTAsQ9YeSFp1rwpcitWrFixYsV6IOt+beBmgyAJ3Ky9VIQ2rFixYsWK9VjWfRNiU2SZPZsEoPYK8yYTVqxYsWLF+iTW/XDDBvp668ne8lJRvnJ6rFixYsWK9VzWzQDEvliTlEL2cXAWDZN/F6xYsWLFivV01jZmzcoxbdy5F31WoGmbOlixYsWKFeu5rHkLpG2Q5K2L/DLaEkwbKNuzYMWKFStWrOeyzmLHrBQyG3qYlVFmka6NXFixYsWKFevprEUpoRyU3AeypNiR7Hm2q/Z6sGLFihUr1hNZ27HI2ZW0b9s0Y2Ztoc0oBlasWLFixfoM1uQYeazZD0rOCh9to2gfNLFixYoVK9bTWdvP+yLFzzVd2jHKtt0yHL/AihUrVqxY35I1D0bJCEWylbZwsx8Eyd+5ip5YsWLFihXrgaw/EV+SYk37VHslbVtlVgzCihUrVqxYn8Gah6dZIEsOnAemfZmmHcKISjNYsWLFihXr4aybOHUvYt4UmZVgZrGy7mVhxYoVK1asb886a4TkMahtcrTPtmWX2eBFHbCwYsWKFSvWo1h/Ljy1w5F56Sc/xaZsVPwiVqxYsWLF+gjWvOHRQufxJY93m1C4GdSoAxZWrFixYsX6lqybWDMrW8zIWr5kb0n8ShpOWLFixYoV6+msm7LFbHNtEyUPZPkbNgELK1asWLFifR5rsvXNAEQeqpLDt7/bNlrqC8CKFStWrFg/hvWuEYp21KMtnezHLIpREqxYsWLFivVjWDcDFnkI2we45NfzQROsWLFixYr12axJ06UtZMzek1x2vtu2bZP/A2HFihUrVqzPYJ0VR/JSRU6250tCWztoEsVErFixYsWK9UBW666FFStWrBZWrFgtrFixWljffv0Gb5RgvIcVK3cAAAAASUVORK5CYII=" style="cursor: auto">
+    </ul>
+  </div>
+
+
+      
+  <div class="theme-post__share">
+    <button class="mdui-btn mdui-ripple mdui-btn-icon" mdui-menu="{target: '#post-share-menu'}">
+      <i class="mdui-icon material-icons">&#xe80d;</i>
+    </button>
+
+    <ul class="mdui-menu" id="post-share-menu">
+
+      
+        <li class="mdui-menu-item">
+            <a href="https://www.facebook.com/sharer/sharer.php?u=https://rodbate.github.io/blog/blog//blog/2020/03/11/Spring%20Aware%E6%8E%A5%E5%8F%A3%E6%89%A7%E8%A1%8C%E6%97%B6%E6%9C%BA%E6%BA%90%E7%A0%81%E6%B7%B1%E5%BA%A6%E8%A7%A3%E8%AF%BB/index.html" target="_blank" class="mdui-ripple">
+                分享到Facebook
+            </a>
+        </li>
+      
+
+      
+        <li class="mdui-menu-item">
+            <a href="https://plus.google.com/share?url=https://rodbate.github.io/blog/blog//blog/2020/03/11/Spring%20Aware%E6%8E%A5%E5%8F%A3%E6%89%A7%E8%A1%8C%E6%97%B6%E6%9C%BA%E6%BA%90%E7%A0%81%E6%B7%B1%E5%BA%A6%E8%A7%A3%E8%AF%BB/index.html" target="_blank" class="mdui-ripple">
+                分享到Google+
+            </a>
+        </li>
+      
+
+      
+        <li class="mdui-menu-item">
+            <a href="https://www.linkedin.com/shareArticle?mini=true&url=https://rodbate.github.io/blog/blog//blog/2020/03/11/Spring%20Aware%E6%8E%A5%E5%8F%A3%E6%89%A7%E8%A1%8C%E6%97%B6%E6%9C%BA%E6%BA%90%E7%A0%81%E6%B7%B1%E5%BA%A6%E8%A7%A3%E8%AF%BB/index.html&title=Spring Aware接口执行时机源码深度解读" target="_blank" class="mdui-ripple">
+                分享到Linkedin
+            </a>
+        </li>
+      
+
+      
+        <li class="mdui-menu-item">
+            <a href="http://connect.qq.com/widget/shareqq/index.html?site=Rodbate Blog&title=Spring Aware接口执行时机源码深度解读&summary=&pics=https://rodbate.github.io/blog/images/avatar.png&url=https://rodbate.github.io/blog/blog/2020/03/11/Spring%20Aware%E6%8E%A5%E5%8F%A3%E6%89%A7%E8%A1%8C%E6%97%B6%E6%9C%BA%E6%BA%90%E7%A0%81%E6%B7%B1%E5%BA%A6%E8%A7%A3%E8%AF%BB/index.html" target="_blank" class="mdui-ripple">
+                分享到QQ
+            </a>
+        </li>
+      
+
+      
+        <li class="mdui-menu-item">
+            <a href="https://telegram.me/share/url?url=https://rodbate.github.io/blog/blog//blog/2020/03/11/Spring%20Aware%E6%8E%A5%E5%8F%A3%E6%89%A7%E8%A1%8C%E6%97%B6%E6%9C%BA%E6%BA%90%E7%A0%81%E6%B7%B1%E5%BA%A6%E8%A7%A3%E8%AF%BB/index.html&text=Spring Aware接口执行时机源码深度解读" target="_blank" class="mdui-ripple">
+                分享到Telegram
+            </a>
+        </li>
+      
+
+      
+        <li class="mdui-menu-item">
+            <a href="https://twitter.com/intent/tweet?text=Spring Aware接口执行时机源码深度解读&url=https://rodbate.github.io/blog/blog//blog/2020/03/11/Spring%20Aware%E6%8E%A5%E5%8F%A3%E6%89%A7%E8%A1%8C%E6%97%B6%E6%9C%BA%E6%BA%90%E7%A0%81%E6%B7%B1%E5%BA%A6%E8%A7%A3%E8%AF%BB/index.html&via=Rodbate" target="_blank" class="mdui-ripple">
+                分享到Twitter
+            </a>
+        </li>
+      
+
+      
+        <li class="mdui-menu-item">
+            <a href="http://service.weibo.com/share.php?appkey=&title=Spring Aware接口执行时机源码深度解读&url=https://rodbate.github.io/blog/blog//blog/2020/03/11/Spring%20Aware%E6%8E%A5%E5%8F%A3%E6%89%A7%E8%A1%8C%E6%97%B6%E6%9C%BA%E6%BA%90%E7%A0%81%E6%B7%B1%E5%BA%A6%E8%A7%A3%E8%AF%BB/index.html&pic=&searchPic=false&style=simple" target="_blank" class="mdui-ripple">
+                分享到微博
+            </a>
+        </li>
+      
+
+    </ul>
+  </div>
+
+
+    </div>
+  </div>
+  <div class="theme-post__warpper
+    
+  ">
+    <div class="theme-post__warpper__container">
+      <article class="mdui-card theme-post__card mdui-hoverable">
+        <section class="theme-post__card__warning">
+          这篇文章最后修改于
+          <span id="content-warning"></span>
+          天之前。
+          本页内容可能已经过时！
+        </section>
+        
+          <section class="theme-post__card__count">
+            
+              <span>
+                本文共1.9k字。
+              </span>
+            
+            
+              <span>
+                阅读大约需要7分钟。
+              </span>
+            
+          </section>
+        
+        
+          <section class="mdui-card-media">
+            <img src="/blog/images/random/1.png"/>
+          </section>
+        
+        <section class="mdui-typo theme-post__card__content">
+          <h2 id="Spring-Aware接口执行时机源码深度解读"><a href="#Spring-Aware接口执行时机源码深度解读" class="headerlink" title="Spring Aware接口执行时机源码深度解读"></a>Spring Aware接口执行时机源码深度解读</h2><p>Spring中有这样一种标记接口的存在Aware,只要是spring管理的bean实现了Aware接口，那么spring就会在bean创建的某个时机将相应的资源注入到该spring bean中，比如ApplicationContextAware, 会将spring 应用上下文ApplicationContext自动注入到bean中。</p>
+<pre class="line-numbers language-java" mdui-tooltip="{content: 'java'}"><code class="language-java"><span class="token comment" spellcheck="true">//Spring Aware标记接口</span>
+<span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">Aware</span> <span class="token punctuation">{</span>
+
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="Spring内建的Aware接口"><a href="#Spring内建的Aware接口" class="headerlink" title="Spring内建的Aware接口"></a>Spring内建的Aware接口</h3><p>Spring 内建的Aware大概分为以下几种</p>
+<h4 id="Spring-core-和-context的内建Aware接口"><a href="#Spring-core-和-context的内建Aware接口" class="headerlink" title="Spring core 和 context的内建Aware接口"></a>Spring core 和 context的内建Aware接口</h4><ul>
+<li>ApplicationEventPublisherAware</li>
+<li>MessageSourceAware</li>
+<li>ResourceLoaderAware</li>
+<li>BeanFactoryAware</li>
+<li>EnvironmentAware</li>
+<li>EmbeddedValueResolverAware</li>
+<li>ImportAware</li>
+<li>LoadTimeWeaverAware</li>
+<li>BeanClassLoaderAware</li>
+<li>BeanNameAware</li>
+<li>ApplicationContextAware</li>
+</ul>
+<h4 id="Spring-web内建的Aware接口"><a href="#Spring-web内建的Aware接口" class="headerlink" title="Spring web内建的Aware接口"></a>Spring web内建的Aware接口</h4><ul>
+<li>ServletContextAware</li>
+<li>ServletConfigAware</li>
+</ul>
+<h4 id="Spring其它内建Aware接口"><a href="#Spring其它内建Aware接口" class="headerlink" title="Spring其它内建Aware接口"></a>Spring其它内建Aware接口</h4><ul>
+<li>SchedulerContextAware (spring scheduling)</li>
+<li>NotificationPublisherAware  (spring jmx export)</li>
+<li>BootstrapContextAware (spring jca)</li>
+</ul>
+<p>如此多的Aware接口，还不包含定制以及第三方引用的(关于如何定制自己的Aware接口不在此探讨，会专门拿出一章来深究), 那么它们的执行时机和顺序是怎样的呢？在我们使用到多个Aware接口而且还需要注意其执行时机和顺序的时候，就必须要弄清楚这一块的逻辑。接下来就是本文重点，深入spring源码来考证探究其原理及发现总结其执行时机以及执行顺序的结论。</p>
+<h3 id="Spring内建Aware接口的执行时机及顺序"><a href="#Spring内建Aware接口的执行时机及顺序" class="headerlink" title="Spring内建Aware接口的执行时机及顺序"></a>Spring内建Aware接口的执行时机及顺序</h3><p>我们可以猜想到Aware接口的执行时机肯定是在Spring Bean创建的时候，那究竟具体在哪呢？接下来一起来探究一下。</p>
+<p>纵观Spring，对于Aware接口的执行实现主要有一下两种模式</p>
+<ul>
+<li>初始化Bean的时候直接进行方法调用 -&gt; setXXXX</li>
+<li>BeanPostProcessor -&gt; Object postProcessBeforeInitialization(Object bean, String beanName)</li>
+</ul>
+<p><strong>结论：直接方法调用的时机要早于通过BeanPostProcessor#postProcessBeforeInitialization调用的时机</strong></p>
+<p>接下来分析一下：</p>
+<p>org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory</p>
+<pre class="line-numbers language-java" mdui-tooltip="{content: 'java'}"><code class="language-java"><span class="token keyword">protected</span> Object <span class="token function">initializeBean</span><span class="token punctuation">(</span><span class="token keyword">final</span> String beanName<span class="token punctuation">,</span> <span class="token keyword">final</span> Object bean<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> RootBeanDefinition mbd<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>System<span class="token punctuation">.</span><span class="token function">getSecurityManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    AccessController<span class="token punctuation">.</span><span class="token function">doPrivileged</span><span class="token punctuation">(</span><span class="token punctuation">(</span>PrivilegedAction<span class="token operator">&lt;</span>Object<span class="token operator">></span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token punctuation">{</span>
+      <span class="token function">invokeAwareMethods</span><span class="token punctuation">(</span>beanName<span class="token punctuation">,</span> bean<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token function">getAccessControlContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">else</span> <span class="token punctuation">{</span>
+    <span class="token function">invokeAwareMethods</span><span class="token punctuation">(</span>beanName<span class="token punctuation">,</span> bean<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+
+  Object wrappedBean <span class="token operator">=</span> bean<span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>mbd <span class="token operator">==</span> null <span class="token operator">||</span> <span class="token operator">!</span>mbd<span class="token punctuation">.</span><span class="token function">isSynthetic</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    wrappedBean <span class="token operator">=</span> <span class="token function">applyBeanPostProcessorsBeforeInitialization</span><span class="token punctuation">(</span>wrappedBean<span class="token punctuation">,</span> beanName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token keyword">try</span> <span class="token punctuation">{</span>
+    <span class="token function">invokeInitMethods</span><span class="token punctuation">(</span>beanName<span class="token punctuation">,</span> wrappedBean<span class="token punctuation">,</span> mbd<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Throwable</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">BeanCreationException</span><span class="token punctuation">(</span>
+      <span class="token punctuation">(</span>mbd <span class="token operator">!=</span> null <span class="token operator">?</span> mbd<span class="token punctuation">.</span><span class="token function">getResourceDescription</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">:</span> null<span class="token punctuation">)</span><span class="token punctuation">,</span>
+      beanName<span class="token punctuation">,</span> <span class="token string">"Invocation of init method failed"</span><span class="token punctuation">,</span> ex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>mbd <span class="token operator">==</span> null <span class="token operator">||</span> <span class="token operator">!</span>mbd<span class="token punctuation">.</span><span class="token function">isSynthetic</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    wrappedBean <span class="token operator">=</span> <span class="token function">applyBeanPostProcessorsAfterInitialization</span><span class="token punctuation">(</span>wrappedBean<span class="token punctuation">,</span> beanName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token keyword">return</span> wrappedBean<span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>由以上代码片段可以看出，在Spring初始化bean的阶段，首先是先调用执行<code>invokeAwareMethods(beanName, bean)</code>, 然后再执行<code>BeanPostProcessor#postProcessBeforeInitialization</code>, 因此Aware接口执行顺序是 <code>直接方法调用 &gt; 通过BeanPostProcessor#postProcessBeforeInitialization执行调用</code>。</p>
+<p>下面来具体分析一下具体Aware接口的调用执行顺序。</p>
+<h4 id="直接方法调用-gt-invokeAwareMethods-beanName-bean"><a href="#直接方法调用-gt-invokeAwareMethods-beanName-bean" class="headerlink" title="直接方法调用 -&gt; invokeAwareMethods(beanName, bean)"></a>直接方法调用 -&gt; invokeAwareMethods(beanName, bean)</h4><pre class="line-numbers language-java" mdui-tooltip="{content: 'java'}"><code class="language-java"><span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">invokeAwareMethods</span><span class="token punctuation">(</span><span class="token keyword">final</span> String beanName<span class="token punctuation">,</span> <span class="token keyword">final</span> Object bean<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>bean <span class="token keyword">instanceof</span> <span class="token class-name">Aware</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>bean <span class="token keyword">instanceof</span> <span class="token class-name">BeanNameAware</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token punctuation">(</span><span class="token punctuation">(</span>BeanNameAware<span class="token punctuation">)</span> bean<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setBeanName</span><span class="token punctuation">(</span>beanName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>bean <span class="token keyword">instanceof</span> <span class="token class-name">BeanClassLoaderAware</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      ClassLoader bcl <span class="token operator">=</span> <span class="token function">getBeanClassLoader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>bcl <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token punctuation">(</span><span class="token punctuation">(</span>BeanClassLoaderAware<span class="token punctuation">)</span> bean<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setBeanClassLoader</span><span class="token punctuation">(</span>bcl<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>bean <span class="token keyword">instanceof</span> <span class="token class-name">BeanFactoryAware</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token punctuation">(</span><span class="token punctuation">(</span>BeanFactoryAware<span class="token punctuation">)</span> bean<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setBeanFactory</span><span class="token punctuation">(</span>AbstractAutowireCapableBeanFactory<span class="token punctuation">.</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><strong>由以上代码片段可以得出结论：Aware接口最先执行顺序是 <code>BeanNameAware -&gt; BeanClassLoaderAware -&gt; BeanFactoryAware</code></strong></p>
+<p>可以写段小代码验证一下。</p>
+<pre class="line-numbers language-java" mdui-tooltip="{content: 'java'}"><code class="language-java"><span class="token annotation punctuation">@Component</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">InvokeAwareDemo</span> <span class="token keyword">implements</span> <span class="token class-name">BeanNameAware</span><span class="token punctuation">,</span> BeanClassLoaderAware<span class="token punctuation">,</span> BeanFactoryAware <span class="token punctuation">{</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token keyword">static</span> Logger LOG <span class="token operator">=</span> LoggerFactory<span class="token punctuation">.</span><span class="token function">getLogger</span><span class="token punctuation">(</span>InvokeAwareMethodsDemo<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setBeanClassLoader</span><span class="token punctuation">(</span>ClassLoader classLoader<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        LOG<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">" ------ BeanClassLoaderAware::setBeanClassLoader invoked"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setBeanFactory</span><span class="token punctuation">(</span>BeanFactory beanFactory<span class="token punctuation">)</span> <span class="token keyword">throws</span> BeansException <span class="token punctuation">{</span>
+        LOG<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">" ------ BeanFactoryAware::setBeanFactory invoked"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setBeanName</span><span class="token punctuation">(</span>String s<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        LOG<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">" ------ BeanNameAware::setBeanName invoked"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>运行结果如下：</p>
+<pre><code>  ------ BeanNameAware::setBeanName invoked
+  ------ BeanClassLoaderAware::setBeanClassLoader invoked
+  ------ BeanFactoryAware::setBeanFactory invoked</code></pre><p>因此可以验证上面的结论。</p>
+<h4 id="BeanPostProcessor-postProcessBeforeInitialization"><a href="#BeanPostProcessor-postProcessBeforeInitialization" class="headerlink" title="BeanPostProcessor#postProcessBeforeInitialization"></a>BeanPostProcessor#postProcessBeforeInitialization</h4><p>第二种模式是通过BeanPostProcessor#postProcessBeforeInitialization的方式来调用相应的Aware接口</p>
+<p>核心代码片段如下所示：</p>
+<p>org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory</p>
+<pre class="line-numbers language-java" mdui-tooltip="{content: 'java'}"><code class="language-java"><span class="token keyword">protected</span> Object <span class="token function">initializeBean</span><span class="token punctuation">(</span><span class="token keyword">final</span> String beanName<span class="token punctuation">,</span> <span class="token keyword">final</span> Object bean<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> RootBeanDefinition mbd<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token comment" spellcheck="true">//....其余代码省略</span>
+
+  Object wrappedBean <span class="token operator">=</span> bean<span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>mbd <span class="token operator">==</span> null <span class="token operator">||</span> <span class="token operator">!</span>mbd<span class="token punctuation">.</span><span class="token function">isSynthetic</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    wrappedBean <span class="token operator">=</span> <span class="token function">applyBeanPostProcessorsBeforeInitialization</span><span class="token punctuation">(</span>wrappedBean<span class="token punctuation">,</span> beanName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token comment" spellcheck="true">//....其余代码省略</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到通过applyBeanPostProcessorsBeforeInitialization(wrappedBean, beanName)来执行相应的Aware接口的BeanPostProcessor, 那么多个Aware接口的执行顺序就取决于相应的BeanPostProcessor的执行顺序。</p>
+<p>其中一个Spring内置的核心Aware BeanPostProcessor是<code>ApplicationContextAwareProcessor</code>, 可以看看这个processor关联的Aware接口</p>
+<pre class="line-numbers language-java" mdui-tooltip="{content: 'java'}"><code class="language-java"><span class="token keyword">public</span> Object <span class="token function">postProcessBeforeInitialization</span><span class="token punctuation">(</span>Object bean<span class="token punctuation">,</span> String beanName<span class="token punctuation">)</span> <span class="token keyword">throws</span> BeansException <span class="token punctuation">{</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token punctuation">(</span>bean <span class="token keyword">instanceof</span> <span class="token class-name">EnvironmentAware</span> <span class="token operator">||</span> bean <span class="token keyword">instanceof</span> <span class="token class-name">EmbeddedValueResolverAware</span> <span class="token operator">||</span>
+        bean <span class="token keyword">instanceof</span> <span class="token class-name">ResourceLoaderAware</span> <span class="token operator">||</span> bean <span class="token keyword">instanceof</span> <span class="token class-name">ApplicationEventPublisherAware</span> <span class="token operator">||</span>
+        bean <span class="token keyword">instanceof</span> <span class="token class-name">MessageSourceAware</span> <span class="token operator">||</span> bean <span class="token keyword">instanceof</span> <span class="token class-name">ApplicationContextAware</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+    <span class="token keyword">return</span> bean<span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+
+  AccessControlContext acc <span class="token operator">=</span> null<span class="token punctuation">;</span>
+
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>System<span class="token punctuation">.</span><span class="token function">getSecurityManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    acc <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>applicationContext<span class="token punctuation">.</span><span class="token function">getBeanFactory</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getAccessControlContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token comment" spellcheck="true">//invokeAwareInterfaces(bean)调用相关联的Aware接口</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>acc <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    AccessController<span class="token punctuation">.</span><span class="token function">doPrivileged</span><span class="token punctuation">(</span><span class="token punctuation">(</span>PrivilegedAction<span class="token operator">&lt;</span>Object<span class="token operator">></span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token punctuation">{</span>
+      <span class="token function">invokeAwareInterfaces</span><span class="token punctuation">(</span>bean<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span> acc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">else</span> <span class="token punctuation">{</span>
+    <span class="token function">invokeAwareInterfaces</span><span class="token punctuation">(</span>bean<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token keyword">return</span> bean<span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><code>invokeAwareInterfaces(bean);</code></p>
+<pre class="line-numbers language-java" mdui-tooltip="{content: 'java'}"><code class="language-java"><span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">invokeAwareInterfaces</span><span class="token punctuation">(</span>Object bean<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>bean <span class="token keyword">instanceof</span> <span class="token class-name">EnvironmentAware</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token punctuation">(</span><span class="token punctuation">(</span>EnvironmentAware<span class="token punctuation">)</span> bean<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setEnvironment</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>applicationContext<span class="token punctuation">.</span><span class="token function">getEnvironment</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>bean <span class="token keyword">instanceof</span> <span class="token class-name">EmbeddedValueResolverAware</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token punctuation">(</span><span class="token punctuation">(</span>EmbeddedValueResolverAware<span class="token punctuation">)</span> bean<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setEmbeddedValueResolver</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>embeddedValueResolver<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>bean <span class="token keyword">instanceof</span> <span class="token class-name">ResourceLoaderAware</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token punctuation">(</span><span class="token punctuation">(</span>ResourceLoaderAware<span class="token punctuation">)</span> bean<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setResourceLoader</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>applicationContext<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>bean <span class="token keyword">instanceof</span> <span class="token class-name">ApplicationEventPublisherAware</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token punctuation">(</span><span class="token punctuation">(</span>ApplicationEventPublisherAware<span class="token punctuation">)</span> bean<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setApplicationEventPublisher</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>applicationContext<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>bean <span class="token keyword">instanceof</span> <span class="token class-name">MessageSourceAware</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token punctuation">(</span><span class="token punctuation">(</span>MessageSourceAware<span class="token punctuation">)</span> bean<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setMessageSource</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>applicationContext<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>bean <span class="token keyword">instanceof</span> <span class="token class-name">ApplicationContextAware</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token punctuation">(</span><span class="token punctuation">(</span>ApplicationContextAware<span class="token punctuation">)</span> bean<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setApplicationContext</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>applicationContext<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>从以上代码可知<code>ApplicationContextAwareProcessor</code>关联了大部分Spring内置Aware接口,它们的执行顺序如下：</p>
+<blockquote>
+<p>EnvironmentAware -&gt; EmbeddedValueResolverAware -&gt; ResourceLoaderAware -&gt; ApplicationEventPublisherAware -&gt; MessageSourceAware -&gt; ApplicationContextAware</p>
+</blockquote>
+<p>验证代码示例由于篇幅原因就不贴了，文末会有代码地址，有需要可自行查看, 执行结果贴一下</p>
+<pre><code>  ------ BeanNameAware::setBeanName invoked
+  ------ BeanClassLoaderAware::setBeanClassLoader invoked
+  ------ BeanFactoryAware::setBeanFactory invoked
+  ------ EnvironmentAware::setEnvironment invoked
+  ------ EmbeddedValueResolverAware::setEmbeddedValueResolver invoked
+  ------ ResourceLoaderAware::setResourceLoader invoked
+  ------ ApplicationEventPublisherAware::setApplicationEventPublisher invoked
+  ------ MessageSourceAware::setMessageSource invoked
+  ------ ApplicationContextAware::setApplicationContext invoked</code></pre><p>由于Aware的接口的调用受到BeanPostProcessor的直接影响，因此BeanPostProcessor的执行顺序也就是Aware接口的调用顺序。可以看看<code>ApplicationContextAwareProcessor</code>的设置执行时机。</p>
+<p><code>AbstractApplicationContext</code>代码片段</p>
+<pre class="line-numbers language-java" mdui-tooltip="{content: 'java'}"><code class="language-java">
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">refresh</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> BeansException<span class="token punctuation">,</span> IllegalStateException <span class="token punctuation">{</span>
+        <span class="token keyword">synchronized</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>startupShutdownMonitor<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token comment" spellcheck="true">// Prepare this context for refreshing.</span>
+            <span class="token function">prepareRefresh</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+            <span class="token comment" spellcheck="true">// Tell the subclass to refresh the internal bean factory.</span>
+            ConfigurableListableBeanFactory beanFactory <span class="token operator">=</span> <span class="token function">obtainFreshBeanFactory</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+            <span class="token comment" spellcheck="true">// Prepare the bean factory for use in this context.</span>
+            <span class="token function">prepareBeanFactory</span><span class="token punctuation">(</span>beanFactory<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+      <span class="token comment" spellcheck="true">//....省略其余代码</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">prepareBeanFactory</span><span class="token punctuation">(</span>ConfigurableListableBeanFactory beanFactory<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment" spellcheck="true">//....省略其余代码</span>
+        <span class="token comment" spellcheck="true">// Configure the bean factory with context callbacks.</span>
+        beanFactory<span class="token punctuation">.</span><span class="token function">addBeanPostProcessor</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">ApplicationContextAwareProcessor</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+      <span class="token comment" spellcheck="true">//....省略其余代码</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><code>beanFactory.addBeanPostProcessor(new ApplicationContextAwareProcessor(this)</code>这里可以看到<code>ApplicationContextAwareProcessor</code>直接第一个加入到该BeanFactory中。</p>
+<p>下面稍微看下<code>BeanPostProcessor</code>调用执行顺序(本文不作详细深究)</p>
+<h4 id="BeanPostProcessor调用执行顺序"><a href="#BeanPostProcessor调用执行顺序" class="headerlink" title="BeanPostProcessor调用执行顺序"></a>BeanPostProcessor调用执行顺序</h4><p>回到上面的org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory#initializeBean代码片段中的</p>
+<pre class="line-numbers language-java" mdui-tooltip="{content: 'java'}"><code class="language-java"><span class="token comment" spellcheck="true">//....其余代码省略</span>
+Object wrappedBean <span class="token operator">=</span> bean<span class="token punctuation">;</span>
+<span class="token keyword">if</span> <span class="token punctuation">(</span>mbd <span class="token operator">==</span> null <span class="token operator">||</span> <span class="token operator">!</span>mbd<span class="token punctuation">.</span><span class="token function">isSynthetic</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  wrappedBean <span class="token operator">=</span> <span class="token function">applyBeanPostProcessorsBeforeInitialization</span><span class="token punctuation">(</span>wrappedBean<span class="token punctuation">,</span> beanName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+ <span class="token comment" spellcheck="true">//....其余代码省略</span>
+
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> Object <span class="token function">applyBeanPostProcessorsBeforeInitialization</span><span class="token punctuation">(</span>Object existingBean<span class="token punctuation">,</span> String beanName<span class="token punctuation">)</span>
+  <span class="token keyword">throws</span> BeansException <span class="token punctuation">{</span>
+
+  Object result <span class="token operator">=</span> existingBean<span class="token punctuation">;</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span>BeanPostProcessor processor <span class="token operator">:</span> <span class="token function">getBeanPostProcessors</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    Object current <span class="token operator">=</span> processor<span class="token punctuation">.</span><span class="token function">postProcessBeforeInitialization</span><span class="token punctuation">(</span>result<span class="token punctuation">,</span> beanName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>current <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">return</span> result<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    result <span class="token operator">=</span> current<span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">return</span> result<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">public</span> List<span class="token operator">&lt;</span>BeanPostProcessor<span class="token operator">></span> <span class="token function">getBeanPostProcessors</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span>beanPostProcessors<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">private</span> <span class="token keyword">final</span> List<span class="token operator">&lt;</span>BeanPostProcessor<span class="token operator">></span> beanPostProcessors <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">CopyOnWriteArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>由以上可知beanPostProcessors是关联该BeanFactory的有序列表, 这个列表的数据来源就是上文所提到的<code>ConfigurableBeanFactory#addBeanPostProcessor(BeanPostProcessor beanPostProcessor)</code> 这个方法。</p>
+<p>回到<code>AbstractApplicationContext#refresh()</code>中的</p>
+<pre class="line-numbers language-java" mdui-tooltip="{content: 'java'}"><code class="language-java"><span class="token function">registerBeanPostProcessors</span><span class="token punctuation">(</span>beanFactory<span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment" spellcheck="true">//向BeanFactory注入BeanPostProcessors</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>注册BeanPostProcessor的最终执行者是<code>PostProcessorRegistrationDelegate.registerBeanPostProcessors</code></p>
+<p>这其中的排序规则如下(针对于属于该BeanFactory的 BeanPostProcessor BeanDefinition): </p>
+<p><code>String[] postProcessorNames = beanFactory.getBeanNamesForType(BeanPostProcessor.class, true, false);</code></p>
+<ul>
+<li>实现了PriorityOrdered接口优先级最高, 再按order进行排序 小 -&gt; 大</li>
+<li>其次是实现了Ordered接口, 再按order进行排序 小 -&gt; 大</li>
+<li>其它的根据BeanDefinition Spring注册顺序来</li>
+</ul>
+<p>当然还可以通过<code>BeanFactoryPostProcessor</code>来配置该BeanFactory, 举个例子<code>ConfigurationClassPostProcessor</code></p>
+<pre class="line-numbers language-java" mdui-tooltip="{content: 'java'}"><code class="language-java"><span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">postProcessBeanFactory</span><span class="token punctuation">(</span>ConfigurableListableBeanFactory beanFactory<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">int</span> factoryId <span class="token operator">=</span> System<span class="token punctuation">.</span><span class="token function">identityHashCode</span><span class="token punctuation">(</span>beanFactory<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>factoriesPostProcessed<span class="token punctuation">.</span><span class="token function">contains</span><span class="token punctuation">(</span>factoryId<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">IllegalStateException</span><span class="token punctuation">(</span>
+      <span class="token string">"postProcessBeanFactory already called on this post-processor against "</span> <span class="token operator">+</span> beanFactory<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">this</span><span class="token punctuation">.</span>factoriesPostProcessed<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>factoryId<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token keyword">this</span><span class="token punctuation">.</span>registriesPostProcessed<span class="token punctuation">.</span><span class="token function">contains</span><span class="token punctuation">(</span>factoryId<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment" spellcheck="true">// BeanDefinitionRegistryPostProcessor hook apparently not supported...</span>
+    <span class="token comment" spellcheck="true">// Simply call processConfigurationClasses lazily at this point then.</span>
+    <span class="token function">processConfigBeanDefinitions</span><span class="token punctuation">(</span><span class="token punctuation">(</span>BeanDefinitionRegistry<span class="token punctuation">)</span> beanFactory<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token function">enhanceConfigurationClasses</span><span class="token punctuation">(</span>beanFactory<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token comment" spellcheck="true">//注册添加ImportAware接口处理器</span>
+  beanFactory<span class="token punctuation">.</span><span class="token function">addBeanPostProcessor</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">ImportAwareBeanPostProcessor</span><span class="token punctuation">(</span>beanFactory<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+
+<span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">class</span> <span class="token class-name">ImportAwareBeanPostProcessor</span> <span class="token keyword">extends</span> <span class="token class-name">InstantiationAwareBeanPostProcessorAdapter</span> <span class="token punctuation">{</span>
+
+    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+
+  <span class="token annotation punctuation">@Override</span>
+  <span class="token keyword">public</span> Object <span class="token function">postProcessBeforeInitialization</span><span class="token punctuation">(</span>Object bean<span class="token punctuation">,</span> String beanName<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>bean <span class="token keyword">instanceof</span> <span class="token class-name">ImportAware</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      ImportRegistry ir <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>beanFactory<span class="token punctuation">.</span><span class="token function">getBean</span><span class="token punctuation">(</span>IMPORT_REGISTRY_BEAN_NAME<span class="token punctuation">,</span> ImportRegistry<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      AnnotationMetadata importingClass <span class="token operator">=</span> ir<span class="token punctuation">.</span><span class="token function">getImportingClassFor</span><span class="token punctuation">(</span>ClassUtils<span class="token punctuation">.</span><span class="token function">getUserClass</span><span class="token punctuation">(</span>bean<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>importingClass <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment" spellcheck="true">//ImportAware#setImportMetadata调用</span>
+        <span class="token punctuation">(</span><span class="token punctuation">(</span>ImportAware<span class="token punctuation">)</span> bean<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setImportMetadata</span><span class="token punctuation">(</span>importingClass<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">return</span> bean<span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>由以上可知ImportAware执行顺序<code>ApplicationContextAwareProcessor</code>关联的那些Aware接口之后执行。</p>
+<h4 id="LoadTimeWeaverAwareProcessor"><a href="#LoadTimeWeaverAwareProcessor" class="headerlink" title="LoadTimeWeaverAwareProcessor"></a>LoadTimeWeaverAwareProcessor</h4><p><code>AbstractApplicationContext#prepareBeanFactory</code></p>
+<pre class="line-numbers language-java" mdui-tooltip="{content: 'java'}"><code class="language-java"><span class="token comment" spellcheck="true">// Detect a LoadTimeWeaver and prepare for weaving, if found.</span>
+<span class="token keyword">if</span> <span class="token punctuation">(</span>beanFactory<span class="token punctuation">.</span><span class="token function">containsBean</span><span class="token punctuation">(</span>LOAD_TIME_WEAVER_BEAN_NAME<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><span class="token comment" spellcheck="true">//有条件的注入, 必须存在该bean或者bean definition</span>
+  beanFactory<span class="token punctuation">.</span><span class="token function">addBeanPostProcessor</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">LoadTimeWeaverAwareProcessor</span><span class="token punctuation">(</span>beanFactory<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token comment" spellcheck="true">// Set a temporary ClassLoader for type matching.</span>
+  beanFactory<span class="token punctuation">.</span><span class="token function">setTempClassLoader</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">ContextTypeMatchClassLoader</span><span class="token punctuation">(</span>beanFactory<span class="token punctuation">.</span><span class="token function">getBeanClassLoader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>目前的Aware接口执行顺序如下：</p>
+<blockquote>
+<p>BeanNameAware -&gt; BeanClassLoaderAware -&gt; BeanFactoryAware -&gt; EnvironmentAware -&gt; EmbeddedValueResolverAware -&gt; ResourceLoaderAware -&gt; ApplicationEventPublisherAware -&gt; MessageSourceAware -&gt; ApplicationContextAware -&gt; ImportAware -&gt; LoadTimeWeaverAware</p>
+</blockquote>
+<p>代码示例运行结果</p>
+<pre><code>  ------ BeanNameAware::setBeanName invoked
+  ------ BeanClassLoaderAware::setBeanClassLoader invoked
+  ------ BeanFactoryAware::setBeanFactory invoked
+  ------ EnvironmentAware::setEnvironment invoked
+  ------ EmbeddedValueResolverAware::setEmbeddedValueResolver invoked
+  ------ ResourceLoaderAware::setResourceLoader invoked
+  ------ ApplicationEventPublisherAware::setApplicationEventPublisher invoked
+  ------ MessageSourceAware::setMessageSource invoked
+  ------ ApplicationContextAware::setApplicationContext invoked
+  ------ LoadTimeWeaverAware::setLoadTimeWeaver invoked</code></pre><p>其它的Aware接口都可类似推研, 定制Aware接口也是类似方法, 简单提一下, 通过BeanPostProcessor来进行Aware接口设置调用。</p>
+<blockquote>
+<p>注: 本文示例代码地址 <a href="https://github.com/rodbate/blog-code/tree/master/java/springframework/src/main/java/com/github/rodbate/blogcode/springframework/aware" target="_blank" rel="noopener">https://github.com/rodbate/blog-code/tree/master/java/springframework/src/main/java/com/github/rodbate/blogcode/springframework/aware</a></p>
+</blockquote>
+
+        </section>
+
+
+        
+          <section class="mdui-card-actions theme-post__card__actions">
+            <div class="theme-spacer"></div>
+            
+            
+              <div class="mdui-chip theme-post__card__chip--bg theme-post__card__chip--margin">
+                <span class="mdui-chip-icon theme-post__card__chip--bg"><i class="mdui-icon mdui-text-color-black-icon fa fa-tags"></i></span>
+              </div>
+              <div class="mdui-typo">
+                
+                  <a href="/blog/tags/Spring/">
+                    <span>Spring</span>
+                  </a>
+                
+                  <a href="/blog/tags/Java/">
+                    <span>Java</span>
+                  </a>
+                
+              </div>
+            
+          </section>
+        
+
+        
+          
+            <section>
+              <div class="mdui-divider"></div>
+            </section>
+            <section class="theme-post__card__comment">
+              
+  <div id="disqus_thread"></div>
+  <script>
+    themeRuntime.commentRest.function = function (newIdentifier, newUrl, newTitle) {
+      DISQUS.reset({
+        reload: true,
+        config: function () {
+          this.page.identifier = newIdentifier;
+          this.page.url = newUrl;
+          this.page.title = newTitle;
+        }
+      });
+    }
+    var disqus_config = function () {
+      this.page.url = 'https://rodbate.github.io/blog/2020/03/11/Spring%20Aware%E6%8E%A5%E5%8F%A3%E6%89%A7%E8%A1%8C%E6%97%B6%E6%9C%BA%E6%BA%90%E7%A0%81%E6%B7%B1%E5%BA%A6%E8%A7%A3%E8%AF%BB/';  // Replace PAGE_URL with your page's canonical URL variable
+      this.page.identifier = 'https://rodbate.github.io/blog/2020/03/11/Spring%20Aware%E6%8E%A5%E5%8F%A3%E6%89%A7%E8%A1%8C%E6%97%B6%E6%9C%BA%E6%BA%90%E7%A0%81%E6%B7%B1%E5%BA%A6%E8%A7%A3%E8%AF%BB/'; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+    };
+    (function() { // DON'T EDIT BELOW THIS LINE
+      var d = document, s = d.createElement('script');
+      s.src = '//rodbate.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', +new Date());
+      (d.head || d.body).appendChild(s);
+    })();
+  </script>
+  <noscript>请启用JavaScript以查看<a href="https://disqus.com/?ref_noscript" target="_blank" rel="noopener">来自Disqus的评论</a></noscript>
+
+
+            </section>
+          
+        
+      </article>
+      
+        <div class="mdui-color-theme theme-post__toc">
+          <html><head></head><body><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#Spring-Aware&#x63A5;&#x53E3;&#x6267;&#x884C;&#x65F6;&#x673A;&#x6E90;&#x7801;&#x6DF1;&#x5EA6;&#x89E3;&#x8BFB;" data-href="#Spring-Aware&#x63A5;&#x53E3;&#x6267;&#x884C;&#x65F6;&#x673A;&#x6E90;&#x7801;&#x6DF1;&#x5EA6;&#x89E3;&#x8BFB;"><span class="toc-number"></span> <span class="toc-text">1. Spring Aware&#x63A5;&#x53E3;&#x6267;&#x884C;&#x65F6;&#x673A;&#x6E90;&#x7801;&#x6DF1;&#x5EA6;&#x89E3;&#x8BFB;</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#Spring&#x5185;&#x5EFA;&#x7684;Aware&#x63A5;&#x53E3;" data-href="#Spring&#x5185;&#x5EFA;&#x7684;Aware&#x63A5;&#x53E3;"><span class="toc-number"></span> <span class="toc-text">1.1. Spring&#x5185;&#x5EFA;&#x7684;Aware&#x63A5;&#x53E3;</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#Spring-core-&#x548C;-context&#x7684;&#x5185;&#x5EFA;Aware&#x63A5;&#x53E3;" data-href="#Spring-core-&#x548C;-context&#x7684;&#x5185;&#x5EFA;Aware&#x63A5;&#x53E3;"><span class="toc-number"></span> <span class="toc-text">1.1.1. Spring core &#x548C; context&#x7684;&#x5185;&#x5EFA;Aware&#x63A5;&#x53E3;</span></a></li><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#Spring-web&#x5185;&#x5EFA;&#x7684;Aware&#x63A5;&#x53E3;" data-href="#Spring-web&#x5185;&#x5EFA;&#x7684;Aware&#x63A5;&#x53E3;"><span class="toc-number"></span> <span class="toc-text">1.1.2. Spring web&#x5185;&#x5EFA;&#x7684;Aware&#x63A5;&#x53E3;</span></a></li><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#Spring&#x5176;&#x5B83;&#x5185;&#x5EFA;Aware&#x63A5;&#x53E3;" data-href="#Spring&#x5176;&#x5B83;&#x5185;&#x5EFA;Aware&#x63A5;&#x53E3;"><span class="toc-number"></span> <span class="toc-text">1.1.3. Spring&#x5176;&#x5B83;&#x5185;&#x5EFA;Aware&#x63A5;&#x53E3;</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#Spring&#x5185;&#x5EFA;Aware&#x63A5;&#x53E3;&#x7684;&#x6267;&#x884C;&#x65F6;&#x673A;&#x53CA;&#x987A;&#x5E8F;" data-href="#Spring&#x5185;&#x5EFA;Aware&#x63A5;&#x53E3;&#x7684;&#x6267;&#x884C;&#x65F6;&#x673A;&#x53CA;&#x987A;&#x5E8F;"><span class="toc-number"></span> <span class="toc-text">1.2. Spring&#x5185;&#x5EFA;Aware&#x63A5;&#x53E3;&#x7684;&#x6267;&#x884C;&#x65F6;&#x673A;&#x53CA;&#x987A;&#x5E8F;</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#&#x76F4;&#x63A5;&#x65B9;&#x6CD5;&#x8C03;&#x7528;-gt-invokeAwareMethods-beanName-bean" data-href="#&#x76F4;&#x63A5;&#x65B9;&#x6CD5;&#x8C03;&#x7528;-gt-invokeAwareMethods-beanName-bean"><span class="toc-number"></span> <span class="toc-text">1.2.1. &#x76F4;&#x63A5;&#x65B9;&#x6CD5;&#x8C03;&#x7528; -&gt; invokeAwareMethods(beanName, bean)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#BeanPostProcessor-postProcessBeforeInitialization" data-href="#BeanPostProcessor-postProcessBeforeInitialization"><span class="toc-number"></span> <span class="toc-text">1.2.2. BeanPostProcessor#postProcessBeforeInitialization</span></a></li><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#BeanPostProcessor&#x8C03;&#x7528;&#x6267;&#x884C;&#x987A;&#x5E8F;" data-href="#BeanPostProcessor&#x8C03;&#x7528;&#x6267;&#x884C;&#x987A;&#x5E8F;"><span class="toc-number"></span> <span class="toc-text">1.2.3. BeanPostProcessor&#x8C03;&#x7528;&#x6267;&#x884C;&#x987A;&#x5E8F;</span></a></li><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#LoadTimeWeaverAwareProcessor" data-href="#LoadTimeWeaverAwareProcessor"><span class="toc-number"></span> <span class="toc-text">1.2.4. LoadTimeWeaverAwareProcessor</span></a></li></ol></li></ol></li></ol></body></html>
+        </div>
+      
+    </div>
+  </div>
+
+  <div class="theme-spacer"></div>
+
+  
+    <div class="mdui-color-theme theme-post__toc-fab">
+  <button class="mdui-fab mdui-color-theme-accent mdui-ripple mdui-fab-fixed mdui-hidden-md-up" mdui-menu="{target: '#toc-fab-menu', fixed: true}" id="toc-fab">
+    <i class="mdui-icon material-icons">&#xe242;</i>
+  </button>
+  <ul class="mdui-menu mdui-typo theme-post__toc-fab__menu" id="toc-fab-menu" style="padding: 8px;max-height: 80%">
+    <html><head></head><body><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#Spring-Aware&#x63A5;&#x53E3;&#x6267;&#x884C;&#x65F6;&#x673A;&#x6E90;&#x7801;&#x6DF1;&#x5EA6;&#x89E3;&#x8BFB;" data-href="#Spring-Aware&#x63A5;&#x53E3;&#x6267;&#x884C;&#x65F6;&#x673A;&#x6E90;&#x7801;&#x6DF1;&#x5EA6;&#x89E3;&#x8BFB;"><span class="toc-number"></span> <span class="toc-text">1. Spring Aware&#x63A5;&#x53E3;&#x6267;&#x884C;&#x65F6;&#x673A;&#x6E90;&#x7801;&#x6DF1;&#x5EA6;&#x89E3;&#x8BFB;</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#Spring&#x5185;&#x5EFA;&#x7684;Aware&#x63A5;&#x53E3;" data-href="#Spring&#x5185;&#x5EFA;&#x7684;Aware&#x63A5;&#x53E3;"><span class="toc-number"></span> <span class="toc-text">1.1. Spring&#x5185;&#x5EFA;&#x7684;Aware&#x63A5;&#x53E3;</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#Spring-core-&#x548C;-context&#x7684;&#x5185;&#x5EFA;Aware&#x63A5;&#x53E3;" data-href="#Spring-core-&#x548C;-context&#x7684;&#x5185;&#x5EFA;Aware&#x63A5;&#x53E3;"><span class="toc-number"></span> <span class="toc-text">1.1.1. Spring core &#x548C; context&#x7684;&#x5185;&#x5EFA;Aware&#x63A5;&#x53E3;</span></a></li><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#Spring-web&#x5185;&#x5EFA;&#x7684;Aware&#x63A5;&#x53E3;" data-href="#Spring-web&#x5185;&#x5EFA;&#x7684;Aware&#x63A5;&#x53E3;"><span class="toc-number"></span> <span class="toc-text">1.1.2. Spring web&#x5185;&#x5EFA;&#x7684;Aware&#x63A5;&#x53E3;</span></a></li><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#Spring&#x5176;&#x5B83;&#x5185;&#x5EFA;Aware&#x63A5;&#x53E3;" data-href="#Spring&#x5176;&#x5B83;&#x5185;&#x5EFA;Aware&#x63A5;&#x53E3;"><span class="toc-number"></span> <span class="toc-text">1.1.3. Spring&#x5176;&#x5B83;&#x5185;&#x5EFA;Aware&#x63A5;&#x53E3;</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#Spring&#x5185;&#x5EFA;Aware&#x63A5;&#x53E3;&#x7684;&#x6267;&#x884C;&#x65F6;&#x673A;&#x53CA;&#x987A;&#x5E8F;" data-href="#Spring&#x5185;&#x5EFA;Aware&#x63A5;&#x53E3;&#x7684;&#x6267;&#x884C;&#x65F6;&#x673A;&#x53CA;&#x987A;&#x5E8F;"><span class="toc-number"></span> <span class="toc-text">1.2. Spring&#x5185;&#x5EFA;Aware&#x63A5;&#x53E3;&#x7684;&#x6267;&#x884C;&#x65F6;&#x673A;&#x53CA;&#x987A;&#x5E8F;</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#&#x76F4;&#x63A5;&#x65B9;&#x6CD5;&#x8C03;&#x7528;-gt-invokeAwareMethods-beanName-bean" data-href="#&#x76F4;&#x63A5;&#x65B9;&#x6CD5;&#x8C03;&#x7528;-gt-invokeAwareMethods-beanName-bean"><span class="toc-number"></span> <span class="toc-text">1.2.1. &#x76F4;&#x63A5;&#x65B9;&#x6CD5;&#x8C03;&#x7528; -&gt; invokeAwareMethods(beanName, bean)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#BeanPostProcessor-postProcessBeforeInitialization" data-href="#BeanPostProcessor-postProcessBeforeInitialization"><span class="toc-number"></span> <span class="toc-text">1.2.2. BeanPostProcessor#postProcessBeforeInitialization</span></a></li><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#BeanPostProcessor&#x8C03;&#x7528;&#x6267;&#x884C;&#x987A;&#x5E8F;" data-href="#BeanPostProcessor&#x8C03;&#x7528;&#x6267;&#x884C;&#x987A;&#x5E8F;"><span class="toc-number"></span> <span class="toc-text">1.2.3. BeanPostProcessor&#x8C03;&#x7528;&#x6267;&#x884C;&#x987A;&#x5E8F;</span></a></li><li class="toc-item toc-level-4"><a class="toc-link mdui-list-item mdui-ripple theme-post__toc__content__link" href="#LoadTimeWeaverAwareProcessor" data-href="#LoadTimeWeaverAwareProcessor"><span class="toc-number"></span> <span class="toc-text">1.2.4. LoadTimeWeaverAwareProcessor</span></a></li></ol></li></ol></li></ol></body></html>
+  </ul>
+</div>
+
+  
+
+  
+    <div class="theme-post__pagination mdui-color-theme">
+  
+    <div class="theme-spacer mdui-hidden-xs"></div>
+  
+
+  
+    <div class="theme-post__pagination__next mdui-ripple mdui-valign">
+      <a href="/blog/2020/02/05/%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A8%E6%9C%8D%E5%8A%A1MinIO%E4%BB%8B%E7%BB%8D/" class="theme-post__pagination__next__content mdui-text-right">
+        <div>
+          <span class="mdui-typo-body-2-opacity mdui-text-center">旧的文章</span>
+          <i class="mdui-icon material-icons mdui-text-center">&#xe5cc;</i>
+        </div>
+        <div class="mdui-typo-title mdui-text-truncate">
+          对象存储服务MinIO介绍
+        </div>
+      </a>
+    </div>
+    
+</div>
+
+  
+</div>
+<script type="text/javascript">
+  themeRuntime.scriptsMap.post = [];
+  if (document.querySelector('.theme-post__toc-fab__menu > ol') !== null && document.querySelector('.theme-post__toc > ol') !== null) {
+    tocHighlight()
+    function tocHighlight() {
+      var timer;
+      function doWork() {
+        listens.forEach(function(value, index) {
+          value[1]();
+          value[0].classList.remove("mdui-list-item-active");
+        })
+        let actionToc = (listens[listens.reduce(function(r, v, index) {
+          if (v[2] == true) {
+            return index;
+          } else return r;
+        }, undefined)] || [])[0] || listens[0][0];
+        actionToc.classList.add("mdui-list-item-active");
+        if(actionToc.getClientRects().length == 0)return;
+        showToc(actionToc);
+      }
+      function showToc(toc) {
+        let offsetTop = toc.getClientRects()[0].top - cardToc.getClientRects()[0].top - 40;
+        let offsetBottom = toc.getClientRects()[0].bottom - cardToc.getClientRects()[0].bottom + 40;
+        let offset = 0;
+        if (offsetTop < 0) offset = offsetTop;
+        if (offsetBottom > 0) offset = offsetBottom;
+        var targetTop = Math.max(0, Math.min(cardToc.scrollTop + offset, toclist.offsetHeight - cardToc.offsetHeight));
+        clearInterval(timer);
+        timer = setInterval(function() {
+          var now = cardToc.scrollTop;
+          var speed = (targetTop - now) / 10;
+          speed = speed > 0 ? Math.ceil(speed) : Math.floor(speed);
+          if (Math.abs(now - targetTop) < 1) {
+            clearInterval(timer);
+          }
+          cardToc.scrollTop = now + speed;
+        }, 30);
+      }
+      var listens = [];
+      var cardToc = document.querySelector('.theme-post__toc');
+      var links = cardToc.querySelectorAll(".theme-post__toc__content__link");
+      var toclist = document.querySelector(".theme-post__toc > ol");
+      Array.prototype.forEach.call(links, function(value, index) {
+        var id = (value.getAttribute("href") || "#").slice(1);
+        var element = document.getElementById(id);
+        listens.push([value, function() {
+          var readed = false;
+          var scrollTop = (document.documentElement && document.documentElement.scrollTop) || document.body.scrollTop;
+          if (element.offsetTop <= scrollTop + element.clientHeight + 64) {
+            readed = true;
+          } else {
+            readed = false;
+          }
+          listens[index][2] = readed;
+        }, false])
+      })
+      doWork();
+      window.addEventListener("scroll", doWork)
+      var listener = {
+        function:  doWork,
+        event: 'scroll',
+        el: window,
+        removed: false
+      }
+      themeRuntime.scriptsMap.post.push(listener)
+    }
+  }
+</script>
+
+<script type="text/javascript">
+  (function() {
+    var postLastModifiedDate = 1583930873248
+    var today = (new Date()).getTime()
+    var difference = Math.floor((today - postLastModifiedDate)/(24*60*60*1000))
+    if (difference >= 100) {
+      document.querySelector('.theme-post__card__warning').style.display = 'block'
+      document.querySelector('#content-warning').textContent = difference
+    }
+  })();
+</script>
+
+<script type="text/javascript">
+  var images = document.querySelectorAll('.theme-post__card__content img')
+  for (i = 0; i < images.length; i++) {
+    //console.log('image added', i)
+    images[i].addEventListener("click", openLG);
+    var listener = {
+      function:  openLG,
+      event: 'click',
+      el: images[i],
+      removed: false
+    }
+    themeRuntime.scriptsMap.post.push(listener)
+  }
+  function openLG() {
+    var img_src = this.getAttribute('src');
+    var img_alt = this.getAttribute('alt');
+    lightGallery(this, {
+      dynamic: true,
+      counter: false,
+      dynamicEl: [{
+        "src": img_src,
+        'subHtml': "<span author>Rodbate</span><div descr>" + img_alt + "</div>"
+      }],
+    });
+  }
+</script>
+
+
+
+
+      </div>
+    </div>
+  </main>
+
+  <div id="outdated" style="z-index: 9999;">
+    <h6>你的浏览器已经过气辣！</h6>
+    <p>赶紧升级浏览器来访问本站吧！<a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">现在就去</a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="关闭">&times;</a></p>
+  </div>
+  <!-- import js -->
+
+
+  
+<script src="/blog/js/outdatedbrowser.min.js"></script>
+
+
+
+
+  
+    
+<script src="/blog/js/js.barba.min.js"></script>
+
+    <script type="text/javascript">
+      Barba.Utils.errorPageUrl = '/blog/404.html';
+    </script>
+  
+
+
+<!-- theme js -->
+<script type="text/javascript">
+  (function() {
+    var appbarTopFlag = false;
+    var appbarEl = document.querySelector('.theme-appbar');
+    function appbarShadow() {
+      var bodyScrolled = (document.documentElement && document.documentElement.scrollTop) || document.body.scrollTop;
+      if (bodyScrolled > 0 && !appbarTopFlag) {
+        appbarEl.classList.add('theme-appbar--shadow');
+        appbarTopFlag = true;
+      } else if (bodyScrolled === 0 && appbarTopFlag) {
+        appbarEl.classList.remove('theme-appbar--shadow');
+        appbarTopFlag = false;
+      }
+    }
+    appbarShadow()
+    window.addEventListener('scroll', appbarShadow);
+  })();
+</script>
+
+
+
+
+
+
+<script type="text/javascript">
+  document.querySelector('body').classList.add('theme-loaded')
+</script>
+
+
+
+
+</body>
+</html>
